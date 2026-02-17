@@ -1,9 +1,13 @@
-import 'dart:async'; // 타이머 사용을 위해 추가
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:dot_frontend/widgets/background_design.dart';
+import 'package:dot_frontend/ui/widgets/background_design.dart';
+import 'package:dot_frontend/service/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  // 테스트를 위해 AuthService를 주입받을 수 있도록 수정
+  final AuthService? authService;
+
+  const LoginScreen({super.key, this.authService});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -12,48 +16,81 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  String? _errorMessage; // 에러 메시지 상태 변수
-  Timer? _errorTimer; // 에러 메시지 자동 삭제를 위한 타이머
+  late final AuthService _authService; // late로 선언
+
+  String? _errorMessage;
+  Timer? _errorTimer;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 주입받은 authService가 있으면 사용하고, 없으면 기본 인스턴스 생성
+    _authService = widget.authService ?? AuthService();
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _errorTimer?.cancel(); // 화면 종료 시 타이머 취소
+    _errorTimer?.cancel();
     super.dispose();
   }
 
-  void _handleLogin() {
-    // 기존 타이머가 있다면 취소 (연속 클릭 방지)
+  Future<void> _handleLogin() async {
     _errorTimer?.cancel();
 
-    // 임시 로그인 로직: 이메일이나 비밀번호가 비어있으면 에러 표시
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      setState(() {
-        _errorMessage = '필수 입력정보를 모두 입력해주세요.';
-      });
+      _showError('필수 입력정보를 모두 입력해주세요.');
+      return;
+    }
 
-      // 3초 후 에러 메시지 자동 삭제
-      _errorTimer = Timer(const Duration(seconds: 3), () {
-        if (mounted) {
-          setState(() {
-            _errorMessage = null;
-          });
-        }
-      });
-    } else {
-      setState(() {
-        _errorMessage = null; // 성공 시 에러 메시지 초기화
-      });
-      print('로그인 시도: 이메일=${_emailController.text}, 비밀번호=${_passwordController.text}');
-      
-      // 로그인 성공 시 메인 화면으로 이동 (Named Route 사용)
-      Navigator.of(context).pushReplacementNamed('/home');
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final success = await _authService.login(
+        _emailController.text,
+        _passwordController.text,
+      );
+
+      if (!mounted) return;
+
+      if (success) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      } else {
+        _showError('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
+  void _showError(String message) {
+    setState(() {
+      _errorMessage = message;
+    });
+
+    _errorTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _errorMessage = null;
+        });
+      }
+    });
+  }
+
   void _handleSignUp() {
-    // 회원가입 화면으로 이동 (Named Route 사용)
     Navigator.of(context).pushNamed('/signup');
   }
 
@@ -62,10 +99,8 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // 배경 디자인 재사용
           const BackgroundDesign(),
           
-          // 중앙 로그인 폼
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
@@ -88,7 +123,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 40),
 
-                  // 에러 메시지 표시 (에러가 있을 때만 보임)
                   if (_errorMessage != null)
                     Container(
                       margin: const EdgeInsets.only(bottom: 20),
@@ -111,7 +145,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   
-                  // 이메일 입력
                   TextField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
@@ -130,7 +163,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
                   
-                  // 비밀번호 입력
                   TextField(
                     controller: _passwordController,
                     obscureText: true,
@@ -149,12 +181,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 24),
                   
-                  // 로그인 버튼
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: _handleLogin,
+                      onPressed: _isLoading ? null : _handleLogin,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: const Color(0xFF4A148C),
@@ -162,17 +193,25 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        'Login',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF4A148C),
+                              ),
+                            )
+                          : const Text(
+                              'Login',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   
-                  // 회원가입 버튼
                   TextButton(
-                    onPressed: _handleSignUp,
+                    onPressed: _isLoading ? null : _handleSignUp,
                     child: const Text(
                       '회원가입',
                       style: TextStyle(

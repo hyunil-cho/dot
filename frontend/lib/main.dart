@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:dot_frontend/config/url_strategy_noop.dart'
     if (dart.library.html) 'package:dot_frontend/config/url_strategy_web.dart';
 
-import 'package:dot_frontend/entry/slide_to_start_screen.dart';
-import 'package:dot_frontend/auth/login_screen.dart';
-import 'package:dot_frontend/auth/signup_screen.dart';
-import 'package:dot_frontend/home/main_screen.dart';
+// UI 패키지 import 경로 수정
+import 'package:dot_frontend/ui/entry/slide_to_start_screen.dart';
+import 'package:dot_frontend/ui/auth/login_screen.dart';
+import 'package:dot_frontend/ui/auth/signup_screen.dart';
+import 'package:dot_frontend/ui/home/main_screen.dart';
 
 void main() {
   // 웹/앱 환경에 따라 적절한 URL 설정 함수 실행

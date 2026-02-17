@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dot_frontend/widgets/background_design.dart';
+import 'package:dot_frontend/ui/widgets/background_design.dart'; // 경로 수정
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
