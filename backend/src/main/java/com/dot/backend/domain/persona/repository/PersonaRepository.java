@@ -2,6 +2,7 @@ package com.dot.backend.domain.persona.repository;
 
 import com.dot.backend.domain.persona.Persona;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -38,6 +39,11 @@ public interface PersonaRepository extends JpaRepository<Persona, Long> {
 
     // AI Job ID로 Persona 조회 (Webhook 처리용)
     Optional<Persona> findByLastTrainingJobId(String jobId);
+
+    // 사용자의 모든 Persona 삭제 (회원 탈퇴용)
+    @Modifying
+    @Query("DELETE FROM Persona p WHERE p.user.id = :userId")
+    void deleteAllByUserId(@Param("userId") Long userId);
 }
 
 
