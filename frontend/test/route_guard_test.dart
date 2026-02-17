@@ -1,3 +1,5 @@
+import 'package:dot_frontend/provider/contacts_provider.dart';
+import 'package:dot_frontend/router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -6,8 +8,6 @@ import 'package:dot_frontend/ui/entry/slide_to_start_screen.dart';
 import 'package:dot_frontend/ui/auth/login_screen.dart';
 import 'package:dot_frontend/ui/home/main_screen.dart';
 
-// main.dart의 라우팅 로직을 테스트하기 위해 유사한 구조를 만듭니다.
-// 실제 main.dart를 import해서 쓸 수도 있지만, 테스트 환경 구성을 위해 별도로 정의하는 것이 좋습니다.
 Widget createTestApp({required String initialRoute, required bool isAuthenticated}) {
   return MultiProvider(
     providers: [
@@ -18,44 +18,12 @@ Widget createTestApp({required String initialRoute, required bool isAuthenticate
         }
         return auth;
       }),
+      // 라우터가 ContactsProvider에 의존하므로, 테스트 환경에도 추가해야 합니다.
+      ChangeNotifierProvider(create: (_) => ContactsProvider()),
     ],
     child: MaterialApp(
       initialRoute: initialRoute,
-      onGenerateRoute: (settings) {
-        // main.dart의 로직 복사 (테스트 대상)
-        const publicRoutes = ['/', '/login', '/signup'];
-        final isPublicRoute = publicRoutes.contains(settings.name);
-
-        return MaterialPageRoute(
-          builder: (context) {
-            final auth = Provider.of<AuthProvider>(context, listen: false);
-            final isAuthenticated = auth.isAuthenticated;
-
-            // Case A: 비로그인 & 비공개 경로 -> 로그인 화면
-            if (!isAuthenticated && !isPublicRoute) {
-              return const LoginScreen();
-            }
-
-            // Case B: 로그인 & 공개 경로 -> 홈 화면
-            if (isAuthenticated && isPublicRoute) {
-              return const MainScreen();
-            }
-
-            // 정상적인 경우
-            switch (settings.name) {
-              case '/':
-                return const SlideToStartScreen();
-              case '/login':
-                return const LoginScreen();
-              case '/home':
-                return const MainScreen();
-              default:
-                return isAuthenticated ? const MainScreen() : const SlideToStartScreen();
-            }
-          },
-          settings: settings,
-        );
-      },
+      onGenerateRoute: generateRoute,
     ),
   );
 }
