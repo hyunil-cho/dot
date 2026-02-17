@@ -77,7 +77,6 @@ class ContactDetailScreen extends StatelessWidget {
                 Expanded(
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.1),
                       borderRadius: const BorderRadius.only(
@@ -86,30 +85,37 @@ class ContactDetailScreen extends StatelessWidget {
                       ),
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildDetailItem(Icons.people, 'Relationship', contact.relationship),
-                        const SizedBox(height: 24),
-                        _buildDetailItem(Icons.note, 'Memo', contact.memo.isNotEmpty ? contact.memo : 'No memo'),
-                        
-                        const Spacer(),
-                        
-                        // 하단 액션 버튼
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            ActionButton(icon: Icons.message, label: 'Message', color: Colors.blueAccent, onTap: () {}),
-                            ActionButton(
-                              icon: Icons.edit,
-                              label: 'Edit',
-                              color: Colors.orangeAccent,
-                              onTap: () {
-                                Navigator.pushNamed(context, '/contact/${contact.id}/edit');
-                              },
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildDetailItem(Icons.people, 'Relationship', contact.relationship),
+                                const SizedBox(height: 24),
+                                _buildDetailItem(Icons.note, 'Memo', contact.memo.isNotEmpty ? contact.memo : 'No memo'),
+                              ],
                             ),
-                          ],
+                          ),
+                        ),q
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ActionButton(icon: Icons.message, label: 'Message', color: Colors.blueAccent, onTap: () {}),
+                              ActionButton(
+                                icon: Icons.edit,
+                                label: 'Edit',
+                                color: Colors.orangeAccent,
+                                onTap: () {
+                                  Navigator.pushNamed(context, '/contact/${contact.id}/edit');
+                                },
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
