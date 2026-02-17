@@ -28,6 +28,7 @@ class SessionsScreen extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 8),
           Expanded(
             child: Consumer<ChatProvider>(
               builder: (context, chatProvider, child) {
