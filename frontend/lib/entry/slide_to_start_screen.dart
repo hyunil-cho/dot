@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:dot_frontend/widgets/background_design.dart';
-import 'package:dot_frontend/auth/login_screen.dart';
 
 class SlideToStartScreen extends StatelessWidget {
   const SlideToStartScreen({super.key});
@@ -88,10 +87,8 @@ class _SlideToStartWidgetState extends State<SlideToStartWidget> {
     if (_dragValue > 0.9) {
       // 성공 시
       print("앱 시작! (Slide Completed)");
-      // 화면 전환 로직 추가
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
+      // 화면 전환 로직 추가 (Named Route 사용)
+      Navigator.of(context).pushReplacementNamed('/login');
     } else {
       // 실패 시 원위치
       setState(() {

@@ -48,7 +48,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
       _errorMessage = null;
     });
     print('회원가입 시도: 이름=${_nameController.text}, 이메일=${_emailController.text}');
-    // TODO: 실제 회원가입 로직 구현
+    
+    // 회원가입 성공 후 로그인 화면으로 복귀 (Pop)
+    // 실제로는 서버 응답을 기다린 후 실행해야 함
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('회원가입이 완료되었습니다. 로그인해주세요.')),
+    );
+    Navigator.of(context).pop();
   }
 
   @override

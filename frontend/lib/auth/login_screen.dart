@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:dot_frontend/widgets/background_design.dart';
-import 'package:dot_frontend/auth/signup_screen.dart';
-import 'package:dot_frontend/home/main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -34,17 +32,14 @@ class _LoginScreenState extends State<LoginScreen> {
       });
       print('로그인 시도: 이메일=${_emailController.text}, 비밀번호=${_passwordController.text}');
       
-      // 로그인 성공 시 메인 화면으로 이동
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const MainScreen()),
-      );
+      // 로그인 성공 시 메인 화면으로 이동 (Named Route 사용)
+      Navigator.of(context).pushReplacementNamed('/home');
     }
   }
 
   void _handleSignUp() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const SignUpScreen()),
-    );
+    // 회원가입 화면으로 이동 (Named Route 사용)
+    Navigator.of(context).pushNamed('/signup');
   }
 
   @override
