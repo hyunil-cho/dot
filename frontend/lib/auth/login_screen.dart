@@ -1,3 +1,4 @@
+import 'dart:async'; // 타이머 사용을 위해 추가
 import 'package:flutter/material.dart';
 import 'package:dot_frontend/widgets/background_design.dart';
 
@@ -12,19 +13,33 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   String? _errorMessage; // 에러 메시지 상태 변수
+  Timer? _errorTimer; // 에러 메시지 자동 삭제를 위한 타이머
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _errorTimer?.cancel(); // 화면 종료 시 타이머 취소
     super.dispose();
   }
 
   void _handleLogin() {
+    // 기존 타이머가 있다면 취소 (연속 클릭 방지)
+    _errorTimer?.cancel();
+
     // 임시 로그인 로직: 이메일이나 비밀번호가 비어있으면 에러 표시
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       setState(() {
-        _errorMessage = '로그인 정보를 확인해주세요';
+        _errorMessage = '필수 입력정보를 모두 입력해주세요.';
+      });
+
+      // 3초 후 에러 메시지 자동 삭제
+      _errorTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() {
+            _errorMessage = null;
+          });
+        }
       });
     } else {
       setState(() {
