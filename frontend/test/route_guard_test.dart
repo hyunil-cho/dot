@@ -1,3 +1,4 @@
+import 'package:dot_frontend/provider/chat_provider.dart';
 import 'package:dot_frontend/provider/contacts_provider.dart';
 import 'package:dot_frontend/router.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +21,7 @@ Widget createTestApp({required String initialRoute, required bool isAuthenticate
       }),
       // 라우터가 ContactsProvider에 의존하므로, 테스트 환경에도 추가해야 합니다.
       ChangeNotifierProvider(create: (_) => ContactsProvider()),
+      ChangeNotifierProvider(create: (_) => ChatProvider()),
     ],
     child: MaterialApp(
       initialRoute: initialRoute,

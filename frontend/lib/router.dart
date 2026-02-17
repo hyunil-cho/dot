@@ -1,4 +1,5 @@
 import 'package:dot_frontend/provider/auth_provider.dart';
+import 'package:dot_frontend/provider/chat_provider.dart';
 import 'package:dot_frontend/provider/contacts_provider.dart';
 import 'package:dot_frontend/ui/auth/login_screen.dart';
 import 'package:dot_frontend/ui/auth/signup_screen.dart';
@@ -7,6 +8,7 @@ import 'package:dot_frontend/ui/contacts/contact_detail_screen.dart';
 import 'package:dot_frontend/ui/contacts/edit_contact_screen.dart';
 import 'package:dot_frontend/ui/entry/slide_to_start_screen.dart';
 import 'package:dot_frontend/ui/home/main_screen.dart';
+import 'package:dot_frontend/ui/message/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -50,6 +52,18 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
       // 5. 각 경로에 맞는 위젯 반환 (동적 경로 우선 처리)
       final contactsProvider =
           Provider.of<ContactsProvider>(context, listen: false);
+      final chatProvider =
+          Provider.of<ChatProvider>(context, listen: false);
+
+      // /chat/:sessionId
+      if (uri.pathSegments.length == 2 &&
+          uri.pathSegments.first == 'chat') {
+        final id = uri.pathSegments[1];
+        final session = chatProvider.getSessionById(id);
+        return session != null
+            ? ChatScreen(session: session)
+            : const MainScreen(selectedIndex: 0); // 혹은 404 페이지
+      }
 
       // /contact/:id/edit
       if (uri.pathSegments.length == 3 &&

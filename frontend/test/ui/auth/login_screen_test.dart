@@ -1,3 +1,6 @@
+import 'package:dot_frontend/provider/chat_provider.dart';
+import 'package:dot_frontend/provider/contacts_provider.dart';
+import 'package:dot_frontend/provider/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -25,6 +28,9 @@ void main() {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+        ChangeNotifierProvider(create: (_) => ContactsProvider()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: MaterialApp(
         // Consumer를 사용하여 로그인 상태에 따라 화면 전환 (main.dart와 동일한 구조)

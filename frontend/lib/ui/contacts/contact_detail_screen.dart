@@ -98,7 +98,7 @@ class ContactDetailScreen extends StatelessWidget {
                               ],
                             ),
                           ),
-                        ),q
+                        ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
                           child: Row(

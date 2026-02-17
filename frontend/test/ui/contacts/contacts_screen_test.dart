@@ -1,4 +1,5 @@
 import 'package:dot_frontend/provider/auth_provider.dart';
+import 'package:dot_frontend/provider/chat_provider.dart';
 import 'package:dot_frontend/provider/contacts_provider.dart';
 import 'package:dot_frontend/provider/settings_provider.dart';
 import 'package:dot_frontend/router.dart';
@@ -19,6 +20,7 @@ Widget createTestApp({required String initialRoute}) {
       }),
       ChangeNotifierProvider(create: (_) => ContactsProvider()),
       ChangeNotifierProvider(create: (_) => SettingsProvider()),
+      ChangeNotifierProvider(create: (_) => ChatProvider()),
     ],
     child: MaterialApp(
       initialRoute: initialRoute,

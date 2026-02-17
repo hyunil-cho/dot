@@ -1,4 +1,5 @@
-import 'package:dot_frontend/ui/contacts/contacts_screen.dart'; // ContactsScreen import
+import 'package:dot_frontend/ui/contacts/contacts_screen.dart';
+import 'package:dot_frontend/ui/message/sessions_screen.dart';
 import 'package:dot_frontend/ui/settings/settings_screen.dart';
 import 'package:dot_frontend/ui/widgets/background_design.dart';
 import 'package:flutter/material.dart';
@@ -15,19 +16,10 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   // 각 탭에 해당하는 페이지
   static const List<Widget> _widgetOptions = <Widget>[
-    // 1. 전화 (Phone)
-    Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.phone, size: 80, color: Colors.white),
-          SizedBox(height: 16),
-          Text('Phone', style: TextStyle(color: Colors.white, fontSize: 24)),
-        ],
-      ),
-    ),
+    // 1. 메시지 (Message)
+    SessionsScreen(),
     // 2. 연락처 (Contacts)
-    ContactsScreen(), // ContactsScreen 연결
+    ContactsScreen(),
     // 3. 설정 (Settings)
     SettingsScreen(),
   ];

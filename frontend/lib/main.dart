@@ -1,3 +1,4 @@
+import 'package:dot_frontend/provider/chat_provider.dart';
 import 'package:dot_frontend/router.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -17,6 +18,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => ContactsProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: const DotApp(),
     ),
