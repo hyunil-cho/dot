@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:dot_frontend/ui/widgets/background_design.dart'; // 경로 수정
+import 'package:dot_frontend/ui/widgets/background_design.dart';
+import 'package:dot_frontend/ui/settings/settings_screen.dart';
+import 'package:dot_frontend/ui/contacts/contacts_screen.dart'; // ContactsScreen import
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -11,7 +13,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0; // 현재 선택된 탭의 인덱스
 
-  // 각 탭에 해당하는 페이지 (임시)
+  // 각 탭에 해당하는 페이지
   static const List<Widget> _widgetOptions = <Widget>[
     // 1. 전화 (Phone)
     Center(
@@ -25,27 +27,9 @@ class _MainScreenState extends State<MainScreen> {
       ),
     ),
     // 2. 연락처 (Contacts)
-    Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.contacts, size: 80, color: Colors.white),
-          SizedBox(height: 16),
-          Text('Contacts', style: TextStyle(color: Colors.white, fontSize: 24)),
-        ],
-      ),
-    ),
+    ContactsScreen(), // ContactsScreen 연결
     // 3. 설정 (Settings)
-    Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.settings, size: 80, color: Colors.white),
-          SizedBox(height: 16),
-          Text('Settings', style: TextStyle(color: Colors.white, fontSize: 24)),
-        ],
-      ),
-    ),
+    SettingsScreen(),
   ];
 
   void _onItemTapped(int index) {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dot_frontend/provider/auth_provider.dart';
+import 'package:dot_frontend/provider/settings_provider.dart';
+import 'package:dot_frontend/provider/contacts_provider.dart'; // ContactsProvider import
 
 import 'package:dot_frontend/config/url_strategy_noop.dart'
     if (dart.library.html) 'package:dot_frontend/config/url_strategy_web.dart';
@@ -17,6 +19,8 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(create: (_) => ContactsProvider()), // ContactsProvider 추가
       ],
       child: const DotApp(),
     ),
