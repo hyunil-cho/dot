@@ -1,18 +1,18 @@
-import 'package:flutter/material.dart';
-import 'package:dot_frontend/ui/widgets/background_design.dart';
-import 'package:dot_frontend/ui/settings/settings_screen.dart';
 import 'package:dot_frontend/ui/contacts/contacts_screen.dart'; // ContactsScreen import
+import 'package:dot_frontend/ui/settings/settings_screen.dart';
+import 'package:dot_frontend/ui/widgets/background_design.dart';
+import 'package:flutter/material.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final int selectedIndex;
+
+  const MainScreen({super.key, this.selectedIndex = 0});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0; // 현재 선택된 탭의 인덱스
-
   // 각 탭에 해당하는 페이지
   static const List<Widget> _widgetOptions = <Widget>[
     // 1. 전화 (Phone)
@@ -33,9 +33,20 @@ class _MainScreenState extends State<MainScreen> {
   ];
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    // 현재 페이지와 같은 탭을 누르면 아무것도 하지 않음
+    if (index == widget.selectedIndex) return;
+
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(context, '/home');
+        break;
+      case 1:
+        Navigator.pushReplacementNamed(context, '/contacts');
+        break;
+      case 2:
+        Navigator.pushReplacementNamed(context, '/settings');
+        break;
+    }
   }
 
   @override
@@ -46,11 +57,11 @@ class _MainScreenState extends State<MainScreen> {
         children: [
           // 배경 디자인 재사용
           const BackgroundDesign(),
-          
+
           // 선택된 탭에 해당하는 페이지 표시
           // SafeArea를 사용하여 상단 상태바 영역 침범 방지
           SafeArea(
-            child: _widgetOptions.elementAt(_selectedIndex),
+            child: _widgetOptions.elementAt(widget.selectedIndex),
           ),
         ],
       ),
@@ -68,8 +79,8 @@ class _MainScreenState extends State<MainScreen> {
         child: BottomNavigationBar(
           items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(
-              icon: Icon(Icons.phone),
-              label: '전화',
+              icon: Icon(Icons.message),
+              label: '메시지',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.contacts),
@@ -80,7 +91,7 @@ class _MainScreenState extends State<MainScreen> {
               label: '설정',
             ),
           ],
-          currentIndex: _selectedIndex,
+          currentIndex: widget.selectedIndex,
           onTap: _onItemTapped,
           // --- 스타일링 ---
           backgroundColor: Colors.transparent, // Container 색상을 따름

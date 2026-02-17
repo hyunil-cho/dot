@@ -35,4 +35,28 @@ class ContactsProvider extends ChangeNotifier {
       return nameLower.contains(queryLower) || contact.phoneNumber.contains(_searchQuery);
     }).toList();
   }
+
+  // 새로운 연락처 추가
+  void addContact(Contact contact) {
+    _contacts.insert(0, contact); // 새 연락처를 맨 앞에 추가
+    notifyListeners();
+  }
+
+  // 연락처 정보 업데이트
+  void updateContact(Contact updatedContact) {
+    final index = _contacts.indexWhere((c) => c.id == updatedContact.id);
+    if (index != -1) {
+      _contacts[index] = updatedContact;
+      notifyListeners();
+    }
+  }
+
+  // ID로 연락처 찾기
+  Contact? getContactById(String id) {
+    try {
+      return _contacts.firstWhere((c) => c.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
 }

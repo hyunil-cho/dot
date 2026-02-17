@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dot_frontend/provider/contacts_provider.dart';
 import 'package:dot_frontend/model/contact.dart';
+import 'package:dot_frontend/ui/contacts/add_contact_screen.dart';
+import 'package:dot_frontend/ui/contacts/contact_detail_screen.dart';
 
 class ContactsScreen extends StatelessWidget {
   const ContactsScreen({super.key});
@@ -10,6 +12,13 @@ class ContactsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/add_contact');
+        },
+        backgroundColor: const Color(0xFF6C63FF),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
       body: Column(
         children: [
           // 상단 제목 및 검색창
@@ -31,19 +40,22 @@ class ContactsScreen extends StatelessWidget {
                 TextField(
                   style: const TextStyle(color: Colors.white),
                   onChanged: (value) {
-                    Provider.of<ContactsProvider>(context, listen: false).setSearchQuery(value);
+                    Provider.of<ContactsProvider>(context, listen: false)
+                        .setSearchQuery(value);
                   },
                   decoration: InputDecoration(
                     hintText: '검색',
                     hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                    prefixIcon: Icon(Icons.search, color: Colors.white.withOpacity(0.5)),
+                    prefixIcon:
+                        Icon(Icons.search, color: Colors.white.withOpacity(0.5)),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.1),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                   ),
                 ),
               ],
@@ -70,7 +82,7 @@ class ContactsScreen extends StatelessWidget {
                   itemCount: contacts.length,
                   itemBuilder: (context, index) {
                     final contact = contacts[index];
-                    return _buildContactTile(contact);
+                    return _buildContactTile(context, contact);
                   },
                 );
               },
@@ -81,7 +93,7 @@ class ContactsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildContactTile(Contact contact) {
+  Widget _buildContactTile(BuildContext context, Contact contact) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -108,10 +120,10 @@ class ContactsScreen extends StatelessWidget {
             fontSize: 12,
           ),
         ),
-        trailing: Icon(Icons.phone, color: Colors.greenAccent.withOpacity(0.8)),
+        trailing:
+            Icon(Icons.phone, color: Colors.greenAccent.withOpacity(0.8)),
         onTap: () {
-          // TODO: 전화 걸기 또는 상세 화면 이동
-          print('${contact.name}에게 전화 걸기');
+          Navigator.pushNamed(context, '/contact/${contact.id}');
         },
       ),
     );
