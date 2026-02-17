@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Provider import
 import 'package:dot_frontend/ui/widgets/background_design.dart';
 import 'package:dot_frontend/service/auth_service.dart';
+import 'package:dot_frontend/provider/auth_provider.dart'; // AuthProvider import
 
 class LoginScreen extends StatefulWidget {
   // 테스트를 위해 AuthService를 주입받을 수 있도록 수정
@@ -51,14 +53,19 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final success = await _authService.login(
+      // AuthService가 이제 토큰(String?)을 반환함
+      final token = await _authService.login(
         _emailController.text,
         _passwordController.text,
       );
 
       if (!mounted) return;
 
-      if (success) {
+      if (token != null) {
+        // 로그인 성공: Provider에 토큰 저장
+        Provider.of<AuthProvider>(context, listen: false).login(token);
+        
+        // 메인 화면으로 이동 (명시적 이동)
         Navigator.of(context).pushReplacementNamed('/home');
       } else {
         _showError('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');

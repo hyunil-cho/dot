@@ -1,15 +1,15 @@
 class AuthService {
   // 로그인 메서드
-  // 성공 시 true, 실패 시 false 반환 (또는 구체적인 에러 메시지 반환 가능)
-  // 실제로는 비동기 통신이 필요하므로 Future<bool>을 반환
-  Future<bool> login(String email, String password) async {
+  // 성공 시 토큰(String), 실패 시 null 반환
+  Future<String?> login(String email, String password) async {
     // 임시 로직: 1초 지연 후, 이메일과 비밀번호가 비어있지 않으면 성공
     await Future.delayed(const Duration(seconds: 1));
 
     if (email.isNotEmpty && password.isNotEmpty) {
-      return true;
+      // 실제로는 서버에서 받은 토큰을 반환해야 함
+      return "mock_token_12345"; 
     } else {
-      return false;
+      return null;
     }
   }
 
