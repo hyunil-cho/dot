@@ -40,17 +40,22 @@ public class SecurityConfig {
             )
 
             // 인증 규칙
-            .authorizeHttpRequests(auth -> auth
-                // 인증 없이 접근 가능한 경로
-                .requestMatchers(
-                    "/api/auth/**",      // 회원가입, 로그인
-                    "/h2-console/**",    // H2 Console (개발용)
-                    "/error"             // 에러 페이지
-                ).permitAll()
+                .authorizeHttpRequests(auth -> auth
+                        // 인증 없이 접근 가능한 경로
+                        .requestMatchers(
+                                "/api/auth/**",      // 회원가입, 로그인
+                                "/h2-console/**",    // H2 Console (개발용)
+                                "/error",            // 에러 페이지
+                                "/swagger-ui/**",    // Swagger UI
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",   // OpenAPI JSON
+                                "/swagger-resources/**",
+                                "/webjars/**"
+                        ).permitAll()
 
-                // 그 외 모든 요청은 인증 필요
-                .anyRequest().authenticated()
-            )
+                        // 그 외 모든 요청은 인증 필요
+                        .anyRequest().authenticated()
+                )
 
             // H2 Console 사용을 위한 설정
             .headers(headers -> headers
