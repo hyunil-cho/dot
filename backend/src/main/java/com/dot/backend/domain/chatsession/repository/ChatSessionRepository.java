@@ -2,6 +2,7 @@ package com.dot.backend.domain.chatsession.repository;
 
 import com.dot.backend.domain.chatsession.ChatSession;
 import com.dot.backend.domain.chatsession.ChatSessionStatus;
+import com.dot.backend.domain.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,6 +20,9 @@ public interface ChatSessionRepository extends JpaRepository<ChatSession, Long> 
 
     // User의 모든 세션 조회
     List<ChatSession> findByUserIdOrderByStartedAtDesc(Long userId);
+
+    // User의 모든 세션 조회 (업데이트순)
+    List<ChatSession> findByUserOrderByUpdatedAtDesc(User user);
 
     // Persona의 모든 세션 조회
     List<ChatSession> findByPersonaIdOrderByStartedAtDesc(Long personaId);
