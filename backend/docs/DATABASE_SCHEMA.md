@@ -44,8 +44,6 @@ erDiagram
         VARCHAR relationship
         VARCHAR profile_image_url
         TEXT memo "AI 참조용"
-        VARCHAR training_status
-        VARCHAR trained_voice_model_id "AI 모델 ID"
         BOOLEAN is_deleted "Soft Delete"
         DATETIME deleted_at
         DATETIME created_at
@@ -203,9 +201,9 @@ public class ChatSession {
 
 **주요 필드**:
 - `name`, `phone_number`: 암호화 저장
-- `memo`: AI가 대화 생성 시 참조할 메모
-- `training_status`: NOT_STARTED | IN_PROGRESS | COMPLETED | FAILED
-- `trained_voice_model_id`: AI Engine에서 반환한 모델 ID (텍스트 모델 포함)
+- `relationship`: 관계 (어머니, 아버지, 친구 등)
+- `profile_image_url`: S3 프로필 이미지
+- `memo`: AI가 대화 생성 시 참조할 메모 (시스템 프롬프트 생성에 사용)
 - `is_deleted`: Soft Delete 플래그
 - `deleted_at`: 삭제 시점 (30일 후 Hard Delete)
 
@@ -217,9 +215,9 @@ public class ChatSession {
 - 삭제 후 30일 경과 시 배치 작업으로 완전 삭제
 - Persona 삭제 시 관련 모든 데이터 CASCADE 삭제
 
-**AI 연동**:
-- 학습 상태는 텍스트 기반 Persona 학습 (LLM Fine-tuning 또는 Prompt 기반)
-- ConversationSample과 PersonaTrait으로 학습 데이터 관리
+**채팅 가능 조건**:
+- 삭제되지 않은 상태
+- 최소 1개 이상의 ConversationSample 또는 memo가 존재
 
 ---
 
