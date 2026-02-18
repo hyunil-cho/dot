@@ -27,7 +27,7 @@ public class ChatSession extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "persona_id")
+    @JoinColumn(name = "persona_id", nullable = false)
     private Persona persona;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -39,17 +39,8 @@ public class ChatSession extends BaseEntity {
     @Builder.Default
     private ChatSessionStatus status = ChatSessionStatus.INIT;
 
-    @Column(name = "s3_key", length = 500)
-    private String s3Key;  // 업로드된 카톡 TXT 파일 S3 경로
-
-    @Column(name = "original_file_name", length = 255)
-    private String originalFileName;  // 원본 파일명
-
-    @Column(name = "selected_speaker", length = 100)
-    private String selectedSpeaker;  // 사용자가 선택한 화자 이름
-
     @Column(name = "system_prompt", columnDefinition = "TEXT")
-    private String systemPrompt;  // Gemini에 전달할 시스템 프롬프트
+    private String systemPrompt;  // 세션별 시스템 프롬프트 (캐싱)
 
     @Column(name = "started_at")
     private LocalDateTime startedAt;
@@ -57,12 +48,13 @@ public class ChatSession extends BaseEntity {
     @Column(name = "ended_at")
     private LocalDateTime endedAt;
 
-    // 상태 전이 메서드 (State Machine Rules 준수)
+    // 상태 전이 메서드
 
-    public void start() {
+    public void start(String systemPrompt) {
         if (this.status != ChatSessionStatus.INIT) {
-            throw new IllegalStateException("Can only start from INIT state");
+            throw new IllegalStateException("INIT 상태에서만 시작할 수 있습니다");
         }
+        this.systemPrompt = systemPrompt;
         this.status = ChatSessionStatus.ACTIVE;
         this.startedAt = LocalDateTime.now();
     }
@@ -75,17 +67,6 @@ public class ChatSession extends BaseEntity {
         this.endedAt = LocalDateTime.now();
     }
 
-    public void uploadFile(String s3Key, String originalFileName) {
-        this.s3Key = s3Key;
-        this.originalFileName = originalFileName;
-    }
-
-    public void selectSpeaker(String speakerName, String systemPrompt) {
-        this.selectedSpeaker = speakerName;
-        this.systemPrompt = systemPrompt;
-        this.status = ChatSessionStatus.ACTIVE;
-        this.startedAt = LocalDateTime.now();
-    }
     public boolean isActive() {
         return this.status == ChatSessionStatus.ACTIVE;
     }
