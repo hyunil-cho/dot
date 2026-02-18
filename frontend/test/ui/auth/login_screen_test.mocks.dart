@@ -32,7 +32,7 @@ class MockAuthService extends _i1.Mock implements _i2.AuthService {
   }
 
   @override
-  _i3.Future<String?> login(
+  _i3.Future<(String, String)?> login(
     String? email,
     String? password,
   ) =>
@@ -44,8 +44,8 @@ class MockAuthService extends _i1.Mock implements _i2.AuthService {
             password,
           ],
         ),
-        returnValue: _i3.Future<String?>.value(),
-      ) as _i3.Future<String?>);
+        returnValue: _i3.Future<(String, String)?>.value(),
+      ) as _i3.Future<(String, String)?>);
 
   @override
   _i3.Future<bool> signUp(

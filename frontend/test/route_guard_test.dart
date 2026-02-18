@@ -15,7 +15,7 @@ Widget createTestApp({required String initialRoute, required bool isAuthenticate
       ChangeNotifierProvider(create: (_) {
         final auth = AuthProvider();
         if (isAuthenticated) {
-          auth.login('mock_token');
+          auth.login('mock_token','refresh token');
         }
         return auth;
       }),

@@ -53,17 +53,19 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // AuthService가 이제 토큰(String?)을 반환함
-      final token = await _authService.login(
+      final tokens = await _authService.login(
         _emailController.text,
         _passwordController.text,
       );
 
       if (!mounted) return;
 
-      if (token != null) {
+      if (tokens != null) {
         // 로그인 성공: Provider에 토큰 저장
-        Provider.of<AuthProvider>(context, listen: false).login(token);
+        Provider.of<AuthProvider>(context, listen: false).login(
+          tokens.$1, // accessToken
+          tokens.$2, // refreshToken
+        );
         
         // 메인 화면으로 이동 (명시적 이동)
         Navigator.of(context).pushReplacementNamed('/home');

@@ -15,7 +15,7 @@ Widget createTestApp({required String initialRoute}) {
       ChangeNotifierProvider(create: (_) {
         final auth = AuthProvider();
         // 이 테스트에서는 인증된 상태를 가정합니다.
-        auth.login('mock_token');
+        auth.login('mock_token', "refresh token");
         return auth;
       }),
       ChangeNotifierProvider(create: (_) => ContactsProvider()),

@@ -1,6 +1,7 @@
 import 'package:dot_frontend/ui/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:dot_frontend/ui/widgets/background_design.dart'; // 경로 수정
+import 'package:dot_frontend/ui/widgets/background_design.dart';
+import 'package:dot_frontend/service/auth_service.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -10,10 +11,13 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  final _authService = AuthService();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  
+  bool _isLoading = false;
   String? _errorMessage;
 
   @override
@@ -25,7 +29,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  void _handleSignUp() {
+  Future<void> _handleSignUp() async {
     // 간단한 유효성 검사
     if (_nameController.text.isEmpty ||
         _emailController.text.isEmpty ||
@@ -44,31 +48,53 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
-    // 성공 시 에러 메시지 초기화 및 로직 수행
     setState(() {
+      _isLoading = true;
       _errorMessage = null;
     });
-    print('회원가입 시도: 이름=${_nameController.text}, 이메일=${_emailController.text}');
-    
-    // 회원가입 성공 후 로그인 화면으로 복귀 (Pop)
-    // 실제로는 서버 응답을 기다린 후 실행해야 함
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('회원가입이 완료되었습니다. 로그인해주세요.')),
-    );
-    Navigator.of(context).pop();
+
+    try {
+      final success = await _authService.signUp(
+        _nameController.text,
+        _emailController.text,
+        _passwordController.text,
+      );
+
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('회원가입이 완료되었습니다. 로그인해주세요.')),
+          );
+          Navigator.of(context).pop();
+        } else {
+          setState(() {
+            _errorMessage = '회원가입에 실패했습니다. 다시 시도해주세요.';
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = '오류가 발생했습니다: $e';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true, // 앱바 뒤로 배경이 보이게 설정
+      extendBodyBehindAppBar: true,
       appBar: const CustomAppBar(),
       body: Stack(
         children: [
-          // 배경 디자인 재사용
           const BackgroundDesign(),
-
-          // 중앙 회원가입 폼
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
@@ -93,7 +119,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   const SizedBox(height: 40),
 
-                  // 에러 메시지 표시
                   if (_errorMessage != null)
                     Container(
                       margin: const EdgeInsets.only(bottom: 20),
@@ -116,47 +141,46 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
 
-                  // 이름 입력
                   _buildTextField(
                     controller: _nameController,
                     hintText: 'Full Name',
                     icon: Icons.person,
+                    enabled: !_isLoading,
                   ),
                   const SizedBox(height: 16),
 
-                  // 이메일 입력
                   _buildTextField(
                     controller: _emailController,
                     hintText: 'Email',
                     icon: Icons.email,
                     keyboardType: TextInputType.emailAddress,
+                    enabled: !_isLoading,
                   ),
                   const SizedBox(height: 16),
 
-                  // 비밀번호 입력
                   _buildTextField(
                     controller: _passwordController,
                     hintText: 'Password',
                     icon: Icons.lock,
                     obscureText: true,
+                    enabled: !_isLoading,
                   ),
                   const SizedBox(height: 16),
 
-                  // 비밀번호 확인 입력
                   _buildTextField(
                     controller: _confirmPasswordController,
                     hintText: 'Confirm Password',
                     icon: Icons.lock_outline,
                     obscureText: true,
+                    enabled: !_isLoading,
                   ),
                   const SizedBox(height: 32),
 
-                  // 회원가입 버튼
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: _handleSignUp,
+                      onPressed: _isLoading ? null : _handleSignUp,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: const Color(0xFF4A148C),
@@ -164,10 +188,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        'Sign Up',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
+                      child: _isLoading
+                          ? const CircularProgressIndicator(
+                              color: Color(0xFF4A148C),
+                            )
+                          : const Text(
+                              'Sign Up',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
                     ),
                   ),
                 ],
@@ -185,11 +213,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
     required IconData icon,
     bool obscureText = false,
     TextInputType? keyboardType,
+    bool enabled = true,
   }) {
     return TextField(
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
+      enabled: enabled,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: hintText,

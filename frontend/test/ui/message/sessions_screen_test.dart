@@ -29,7 +29,7 @@ Widget createTestApp({
     providers: [
       ChangeNotifierProvider(create: (_) {
         final auth = AuthProvider();
-        auth.login('mock_token'); // Assume authenticated
+        auth.login('mock_token','refresh token'); // Assume authenticated
         return auth;
       }),
       ChangeNotifierProvider(create: (_) => ContactsProvider()),

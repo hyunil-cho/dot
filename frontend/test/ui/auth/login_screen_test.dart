@@ -87,10 +87,10 @@ void main() {
   });
 
   testWidgets('로그인 성공 시 Provider 상태 업데이트 및 홈 화면으로 이동한다', (WidgetTester tester) async {
-    // 1. Mock 설정: login 메서드가 지연 후 토큰을 반환하도록 설정
+    // 1. Mock 설정: login 메서드가 지연 후 액세스 토큰과 리프레시 토큰을 반환하도록 설정
     when(mockAuthService.login(any, any)).thenAnswer((_) async {
       await Future.delayed(const Duration(milliseconds: 100)); // 지연 시간 추가
-      return 'mock_token';
+      return ('mock_access_token', 'mock_refresh_token');
     });
 
     // 2. 위젯 렌더링
@@ -113,7 +113,8 @@ void main() {
     // 7. 검증
     // - AuthProvider 상태가 업데이트 되었는지 확인
     expect(authProvider.isAuthenticated, isTrue);
-    expect(authProvider.token, 'mock_token');
+    expect(authProvider.accessToken, 'mock_access_token');
+    expect(authProvider.refreshToken, 'mock_refresh_token');
     
     // - 홈 화면으로 이동했는지 확인
     expect(find.byType(HomeScreen), findsOneWidget);
