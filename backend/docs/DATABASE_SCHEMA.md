@@ -6,19 +6,23 @@
 erDiagram
     USERS ||--o{ PERSONAS : owns
     USERS ||--|| USER_SETTINGS : has
-    USERS ||--o{ CALL_SESSIONS : initiates
-    USERS ||--o{ CALL_LOGS : has
+    USERS ||--o{ CHAT_SESSIONS : initiates
+    USERS ||--o{ CHAT_LOGS : has
+    USERS ||--o{ REFRESH_TOKENS : has
     
-    PERSONAS ||--o{ VOICE_DATA : contains
-    PERSONAS ||--o{ CALL_SESSIONS : receives
-    PERSONAS ||--o{ CALL_LOGS : references
+    PERSONAS ||--o{ CONVERSATION_SAMPLE : contains
+    PERSONAS ||--o{ PERSONA_TRAIT : has
+    PERSONAS ||--o{ CHAT_SESSIONS : receives
+    PERSONAS ||--o{ CHAT_LOGS : references
+    PERSONAS ||--o{ CHAT_MESSAGE : involved_in
     
-    CALL_SESSIONS ||--o| CALL_LOGS : creates
+    CHAT_SESSIONS ||--o| CHAT_LOGS : creates
 
     USERS {
         BIGINT id PK
         VARCHAR email UK "암호화"
         VARCHAR password "BCrypt"
+        VARCHAR name "암호화, Optional"
         DATETIME created_at
         DATETIME updated_at
     }
@@ -26,7 +30,7 @@ erDiagram
     USER_SETTINGS {
         BIGINT id PK
         BIGINT user_id FK,UK
-        INT call_timeout_seconds
+        INT chat_timeout_seconds
         BOOLEAN notification_enabled
         DATETIME created_at
         DATETIME updated_at
@@ -40,48 +44,69 @@ erDiagram
         VARCHAR relationship
         VARCHAR profile_image_url
         TEXT memo "AI 참조용"
-        VARCHAR learning_status
-        VARCHAR last_training_job_id "AI Job ID"
-        DATETIME last_training_updated_at "학습 상태 동기화 시간"
+        VARCHAR training_status
+        VARCHAR trained_voice_model_id "AI 모델 ID"
         BOOLEAN is_deleted "Soft Delete"
         DATETIME deleted_at
         DATETIME created_at
         DATETIME updated_at
     }
 
-    VOICE_DATA {
+    CONVERSATION_SAMPLE {
         BIGINT id PK
         BIGINT persona_id FK
-        VARCHAR file_url "암호화, S3"
-        VARCHAR file_name "암호화"
-        BIGINT file_size
-        VARCHAR ai_file_id "AI Engine 파일 ID"
-        DATETIME uploaded_at
+        VARCHAR speaker "user|persona"
+        TEXT message "암호화"
+        INT sequence_order
         DATETIME created_at
-        DATETIME updated_at
     }
 
-    CALL_SESSIONS {
+    PERSONA_TRAIT {
+        BIGINT id PK
+        BIGINT persona_id FK
+        VARCHAR trait_type "speech_pattern|habit_word|personality"
+        TEXT trait_value "암호화"
+        DATETIME created_at
+    }
+
+    CHAT_SESSIONS {
         BIGINT id PK
         BIGINT persona_id FK
         BIGINT user_id FK
-        VARCHAR status "INIT|CONNECTING|ACTIVE|ENDED"
+        VARCHAR status "INIT|ACTIVE|ENDED"
         DATETIME started_at
         DATETIME ended_at
         DATETIME created_at
         DATETIME updated_at
     }
 
-    CALL_LOGS {
+    CHAT_LOGS {
         BIGINT id PK
         BIGINT user_id FK
         BIGINT persona_id FK "ON DELETE CASCADE"
-        BIGINT call_session_id FK
+        BIGINT chat_session_id FK
         DATETIME started_at
         DATETIME ended_at
         INT duration_seconds
         DATETIME created_at
         DATETIME updated_at
+    }
+
+    CHAT_MESSAGE {
+        BIGINT id PK
+        BIGINT persona_id FK
+        BIGINT user_id FK
+        VARCHAR sender_type "user|assistant"
+        TEXT content "암호화"
+        DATETIME created_at
+    }
+
+    REFRESH_TOKENS {
+        BIGINT id PK
+        BIGINT user_id FK
+        VARCHAR token UK
+        DATETIME expires_at
+        DATETIME created_at
     }
 ```
 
@@ -89,31 +114,27 @@ erDiagram
 
 ## 🎯 아키텍처 결정사항
 
-### TRAINING_JOBS 테이블 제거 ✅
+### 텍스트 기반 채팅으로 전환 ✅
 
-**결정**: 학습 작업 상태는 AI Engine이 관리하고, REST API는 메타데이터만 캐싱
-
-**이유**:
-- ✅ 명확한 책임 분리 (AI 작업은 AI API가 소유)
-- ✅ 독립적 확장 가능 (AI Engine 변경 시 REST API 영향 없음)
-- ✅ 단순한 스키마 (비즈니스 도메인에 집중)
-
-**구현 방식**:
+**변경사항**:
 ```
-PERSONAS 테이블:
-├─ learning_status (캐시된 상태)
-├─ last_training_job_id (AI에서 받은 ID)
-└─ last_training_updated_at (동기화 시간)
+제거:
+├─ voice_data (음성 파일 메타데이터)
+├─ training_jobs (AI 학습 작업 - AI API로 이관)
+└─ call_sessions.CONNECTING 상태
 
-AI API (외부):
-└─ TRAINING_JOBS (AI 내부 관리)
+추가:
+├─ conversation_sample (대화 샘플)
+├─ persona_trait (성향 정보)
+├─ chat_message (채팅 메시지)
+└─ chat_sessions (call_sessions 대체)
 ```
 
 ---
 
-### CALL_SESSIONS의 duration_seconds 제거 ✅
+### CHAT_SESSIONS의 duration_seconds 제거 ✅
 
-**결정**: 통화 시간은 `started_at`과 `ended_at`으로 동적 계산
+**결정**: 채팅 시간은 `started_at`과 `ended_at`으로 동적 계산
 
 **이유**:
 - ✅ 단일 진실 공급원 (Single Source of Truth) - `started_at`, `ended_at`만 관리
@@ -123,7 +144,7 @@ AI API (외부):
 **구현 방식**:
 ```java
 @Entity
-public class CallSession {
+public class ChatSession {
     private LocalDateTime startedAt;
     private LocalDateTime endedAt;
 
@@ -137,9 +158,9 @@ public class CallSession {
 }
 ```
 
-**call_logs는 duration_seconds 유지**:
+**chat_logs는 duration_seconds 유지**:
 - 이력 조회용 테이블이므로 성능 최적화를 위해 미리 계산된 값 저장
-- 세션 종료 시 `CallLog.fromSession()`에서 한 번만 계산
+- 세션 종료 시 `ChatLog.fromSession()`에서 한 번만 계산
 
 ---
 
@@ -183,9 +204,8 @@ public class CallSession {
 **주요 필드**:
 - `name`, `phone_number`: 암호화 저장
 - `memo`: AI가 대화 생성 시 참조할 메모
-- `learning_status`: NOT_STARTED | IN_PROGRESS | COMPLETED | FAILED
-- `last_training_job_id`: AI Engine에서 반환한 Job ID (외부 참조)
-- `last_training_updated_at`: 마지막 학습 상태 동기화 시간
+- `training_status`: NOT_STARTED | IN_PROGRESS | COMPLETED | FAILED
+- `trained_voice_model_id`: AI Engine에서 반환한 모델 ID (텍스트 모델 포함)
 - `is_deleted`: Soft Delete 플래그
 - `deleted_at`: 삭제 시점 (30일 후 Hard Delete)
 
@@ -198,46 +218,70 @@ public class CallSession {
 - Persona 삭제 시 관련 모든 데이터 CASCADE 삭제
 
 **AI 연동**:
-- 학습 상태는 AI API에서 조회하여 캐싱
-- Webhook으로 실시간 상태 동기화
+- 학습 상태는 텍스트 기반 Persona 학습 (LLM Fine-tuning 또는 Prompt 기반)
+- ConversationSample과 PersonaTrait으로 학습 데이터 관리
 
 ---
 
-### 4. `voice_data` - 음성 파일 메타데이터 테이블
+### 4. `conversation_sample` - 대화 샘플 테이블
 
-**목적**: S3에 저장된 음성 파일 정보 관리
+**목적**: AI 학습용 대화 샘플 저장
 
 **주요 필드**:
-- `file_url`: S3 URL (암호화)
-- `file_name`: 원본 파일명 (암호화)
-- `file_size`: 바이트 단위
-- `ai_file_id`: AI Engine에 업로드된 파일 ID (외부 참조)
+- `speaker`: user | persona (누가 한 말인지)
+- `message`: 대화 내용 (암호화)
+- `sequence_order`: 대화 순서
 
 **관계**:
 - Persona 삭제 시 CASCADE 삭제
 
+**사용 예시**:
+```
+speaker: "persona", message: "오늘 날씨 좋다~"
+speaker: "user", message: "진짜 맑네요"
+speaker: "persona", message: "산책 갈까? ㅋㅋ"
+```
+
 ---
 
-### 5. `call_sessions` - 통화 세션 테이블
+### 5. `persona_trait` - 성향 정보 테이블
 
-**목적**: 진행 중인 통화 세션 관리
+**목적**: Persona의 말투, 습관어, 성격 특성 저장
+
+**주요 필드**:
+- `trait_type`: speech_pattern | habit_word | personality
+- `trait_value`: 성향 값 (암호화)
+
+**관계**:
+- Persona 삭제 시 CASCADE 삭제
+
+**사용 예시**:
+```
+trait_type: "speech_pattern", trait_value: "~인 것 같아"
+trait_type: "habit_word", trait_value: "ㅋㅋ"
+trait_type: "personality", trait_value: "친절하고 밝음"
+```
+
+---
+
+### 6. `chat_sessions` - 채팅 세션 테이블
+
+**목적**: 진행 중인 채팅 세션 관리
 
 **상태 흐름** (State Machine):
 ```
-INIT → CONNECTING → ACTIVE → ENDED
-CONNECTING → ENDED
-ACTIVE → ENDED
+INIT → ACTIVE → ENDED
 ```
 
 **Domain Invariant**:
 - **Persona당 ACTIVE 상태는 1개만 허용**
 
 **주요 필드**:
-- `status`: 통화 상태 (INIT, CONNECTING, ACTIVE, ENDED)
-- `started_at`: 통화 시작 시간
-- `ended_at`: 통화 종료 시간
+- `status`: 채팅 상태 (INIT, ACTIVE, ENDED)
+- `started_at`: 채팅 시작 시간
+- `ended_at`: 채팅 종료 시간
 
-**통화 시간 계산**:
+**채팅 시간 계산**:
 ```java
 // Entity에서 getter로 동적 계산
 public Integer getDurationSeconds() {
@@ -255,17 +299,17 @@ public Integer getDurationSeconds() {
 
 ---
 
-### 6. `call_logs` - 통화 기록 테이블
+### 7. `chat_logs` - 채팅 기록 테이블
 
-**목적**: 최근 통화 목록 및 이력 조회
+**목적**: 최근 채팅 목록 및 이력 조회
 
 **주요 필드**:
-- `duration_seconds`: **미리 계산된 통화 시간** (성능 최적화)
+- `duration_seconds`: **미리 계산된 채팅 시간** (성능 최적화)
 - 종료된 세션의 복사본
 
 **주요 특징**:
 - Persona 삭제 시 함께 CASCADE 삭제 (보안 우선)
-- `idx_call_log_user_started` 인덱스로 빠른 조회
+- `idx_chat_log_user_started` 인덱스로 빠른 조회
 - duration은 세션 종료 시 한 번만 계산하여 저장
 
 **성능 최적화**:
@@ -274,14 +318,34 @@ public Integer getDurationSeconds() {
 
 ---
 
+### 8. `chat_message` - 채팅 메시지 테이블
+
+**목적**: 실제 채팅 대화 내용 저장
+
+**주요 필드**:
+- `sender_type`: user | assistant
+- `content`: 메시지 내용 (암호화)
+
+**관계**:
+- Persona 삭제 시 CASCADE 삭제
+- User 삭제 시 CASCADE 삭제
+
+**사용 용도**:
+- 대화 기록 조회
+- AI 컨텍스트 관리 (최근 N개 메시지)
+
+---
+
 ## 🔐 보안 정책
 
 ### 암호화 대상 필드
 - `users.email`
+- `users.name`
 - `personas.name`
 - `personas.phone_number`
-- `voice_data.file_url`
-- `voice_data.file_name`
+- `conversation_sample.message`
+- `persona_trait.trait_value`
+- `chat_message.content`
 
 **암호화 방식**: AES-256-GCM
 
@@ -290,19 +354,26 @@ public Integer getDurationSeconds() {
 ```
 User 삭제 시:
 ├── UserSettings (CASCADE)
+├── RefreshTokens (CASCADE)
 ├── Personas (CASCADE)
-│   ├── VoiceData (CASCADE)
-│   ├── CallSessions (CASCADE)
-│   └── CallLogs (CASCADE)
-└── CallLogs (CASCADE)
+│   ├── ConversationSample (CASCADE)
+│   ├── PersonaTrait (CASCADE)
+│   ├── ChatSessions (CASCADE)
+│   ├── ChatLogs (CASCADE)
+│   └── ChatMessage (CASCADE)
+├── ChatSessions (CASCADE)
+├── ChatLogs (CASCADE)
+└── ChatMessage (CASCADE)
 
 Persona 삭제 시:
 ├── Soft Delete (is_deleted = true, deleted_at 기록)
 ├── 30일 유예 기간
 └── 배치 작업으로 Hard Delete
-    ├── VoiceData (CASCADE)
-    ├── CallSessions (CASCADE)
-    └── CallLogs (CASCADE)
+    ├── ConversationSample (CASCADE)
+    ├── PersonaTrait (CASCADE)
+    ├── ChatSessions (CASCADE)
+    ├── ChatLogs (CASCADE)
+    └── ChatMessage (CASCADE)
 ```
 
 ---
@@ -350,14 +421,6 @@ public interface AiApiClient {
 ```
 backend/
 ├── src/main/java/com/dot/backend/
-│   ├── client/
-│   │   └── ai/
-│   │       ├── AiApiClient.java (Interface)
-│   │       ├── DevAiApiClient.java (개발용 Mock)
-│   │       ├── AiApiClientImpl.java (프로덕션용)
-│   │       ├── TrainingJobRequest.java
-│   │       ├── TrainingJobResponse.java
-│   │       └── TrainingJobStatusResponse.java
 │   ├── domain/
 │   │   ├── common/
 │   │   │   └── BaseEntity.java
@@ -432,21 +495,21 @@ Password: (비워두기)
 List<Persona> personas = personaRepository.findActiveByUserId(userId);
 ```
 
-### 2. 최근 통화 목록 (20건)
+### 2. 최근 채팅 목록 (20건)
 ```java
-List<CallLog> recentCalls = callLogRepository
+List<ChatLog> recentChats = chatLogRepository
     .findByUserIdOrderByStartedAtDesc(userId, PageRequest.of(0, 20));
 ```
 
-### 3. Persona의 활성 통화 세션 확인
+### 3. Persona의 활성 채팅 세션 확인
 ```java
-Optional<CallSession> activeSession = callSessionRepository
+Optional<ChatSession> activeSession = chatSessionRepository
     .findActiveSessionByPersonaId(personaId);
 ```
 
-### 4. 통화 시간 조회 (동적 계산)
+### 4. 채팅 시간 조회 (동적 계산)
 ```java
-CallSession session = callSessionRepository.findById(sessionId).orElseThrow();
+ChatSession session = chatSessionRepository.findById(sessionId).orElseThrow();
 Integer duration = session.getDurationSeconds(); // started_at과 ended_at으로 계산
 ```
 
@@ -458,17 +521,36 @@ List<Persona> expired = personaRepository
 personaRepository.deleteAll(expired); // CASCADE 동작
 ```
 
+### 6. Persona의 대화 샘플 조회
+```java
+List<ConversationSample> samples = conversationSampleRepository
+    .findByPersonaIdOrderBySequenceOrder(personaId);
+```
+
+### 7. Persona의 성향 정보 조회
+```java
+List<PersonaTrait> traits = personaTraitRepository
+    .findByPersonaId(personaId);
+```
+
+### 8. 최근 채팅 메시지 조회 (컨텍스트용)
+```java
+List<ChatMessage> context = chatMessageRepository
+    .findRecentMessages(personaId, userId, 10); // 최근 10개
+```
+
 ---
 
 ## ✅ 다음 단계
 
-- [ ] Service Layer 구현
+- [ ] Persona Service Layer 구현
+- [ ] PersonaTrait, ConversationSample 관리 API
+- [ ] ChatService 구현
+- [ ] ChatAiService 인터페이스 및 Mock 구현
 - [ ] Controller 및 DTO 생성
-- [ ] Spring Security + JWT 설정
+- [ ] Spring Security + JWT 설정 (완료)
 - [ ] 암호화 유틸리티 구현
-- [ ] S3 파일 업로드 서비스
-- [ ] WebSocket 설정 (실시간 통화)
-- [ ] AI Engine 연동 Interface
+- [ ] ChatController 구현
 - [ ] API 문서 (Swagger/OpenAPI)
 - [ ] 단위 테스트 작성
 
