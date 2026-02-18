@@ -1,3 +1,4 @@
+import 'package:dot_frontend/provider/auth_provider.dart';
 import 'package:dot_frontend/provider/contacts_provider.dart';
 import 'package:dot_frontend/model/contact.dart';
 import 'package:dot_frontend/ui/widgets/background_design.dart';
@@ -5,8 +6,25 @@ import 'package:dot_frontend/ui/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class ContactsScreen extends StatelessWidget {
+class ContactsScreen extends StatefulWidget {
   const ContactsScreen({super.key});
+
+  @override
+  State<ContactsScreen> createState() => _ContactsScreenState();
+}
+
+class _ContactsScreenState extends State<ContactsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.accessToken != null) {
+        Provider.of<ContactsProvider>(context, listen: false)
+            .fetchContacts(authProvider.accessToken!);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,12 +77,42 @@ class ContactsScreen extends StatelessWidget {
                 Expanded(
                   child: Consumer<ContactsProvider>(
                     builder: (context, contactsProvider, child) {
+                      if (contactsProvider.isLoading) {
+                        return const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        );
+                      }
+
+                      if (contactsProvider.errorMessage != null) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                contactsProvider.errorMessage!,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                                  if (authProvider.accessToken != null) {
+                                    contactsProvider.fetchContacts(authProvider.accessToken!);
+                                  }
+                                },
+                                child: const Text('다시 시도'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
                       final contacts = contactsProvider.filteredContacts;
 
                       if (contacts.isEmpty) {
                         return Center(
                           child: Text(
-                            '검색 결과가 없습니다.',
+                            '연락처가 없습니다.',
                             style: TextStyle(color: Colors.white.withOpacity(0.5)),
                           ),
                         );
@@ -97,11 +145,15 @@ class ContactsScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: const Color(0xFF6C63FF),
-          foregroundColor: Colors.white,
-          child: Text(contact.initial),
-        ),
+        leading: contact.profileImageUrl != null
+            ? CircleAvatar(
+                backgroundImage: NetworkImage(contact.profileImageUrl!),
+              )
+            : CircleAvatar(
+                backgroundColor: const Color(0xFF6C63FF),
+                foregroundColor: Colors.white,
+                child: Text(contact.initial),
+              ),
         title: Text(
           contact.name,
           style: const TextStyle(

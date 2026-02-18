@@ -55,7 +55,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
         phoneNumber: _phoneController.text,
         relationship: _relationshipController.text,
         memo: _memoController.text,
-        avatarUrl: widget.contact.avatarUrl, // 기존 이미지 URL 유지
+        profileImageUrl: widget.contact.profileImageUrl, // 기존 이미지 URL 유지
       );
 
       // Provider를 통해 연락처 업데이트

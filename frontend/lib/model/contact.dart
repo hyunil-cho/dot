@@ -2,19 +2,40 @@ class Contact {
   final String id;
   final String name;
   final String phoneNumber;
-  final String? avatarUrl; // 이미지 URL (없으면 이니셜 표시)
-  final String relationship; // 관계 (예: 친구, 가족, 직장)
-  final String memo; // 메모
+  final String? profileImageUrl; 
+  final String relationship; 
+  final String memo; 
 
   Contact({
     required this.id,
     required this.name,
     required this.phoneNumber,
-    this.avatarUrl,
-    this.relationship = 'Unknown', // 기본값
-    this.memo = '', // 기본값
+    this.profileImageUrl,
+    this.relationship = 'Unknown',
+    this.memo = '',
   });
 
-  // 이름의 첫 글자를 가져오는 헬퍼 메서드
+  factory Contact.fromJson(Map<String, dynamic> json) {
+    return Contact(
+      id: json['id'].toString(),
+      name: json['name'] ?? '',
+      phoneNumber: json['phoneNumber'] ?? '',
+      profileImageUrl: json['profileImageUrl'],
+      relationship: json['relationship'] ?? 'Unknown',
+      memo: json['memo'] ?? '', // API 응답에 memo가 없을 수 있으므로 기본값 설정
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': int.tryParse(id),
+      'name': name,
+      'phoneNumber': phoneNumber,
+      'profileImageUrl': profileImageUrl,
+      'relationship': relationship,
+      'memo': memo,
+    };
+  }
+
   String get initial => name.isNotEmpty ? name[0].toUpperCase() : '?';
 }
