@@ -45,7 +45,10 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/auth/**",      // 회원가입, 로그인
                     "/h2-console/**",    // H2 Console (개발용)
-                    "/error"             // 에러 페이지
+                    "/error",            // 에러 페이지
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/v3/api-docs/**"
                 ).permitAll()
 
                 // 그 외 모든 요청은 인증 필요

@@ -9,5 +9,4 @@ public class DotBackendApplication {
     public static void main(String[] args) {
         SpringApplication.run(DotBackendApplication.class, args);
     }
-
 }

@@ -71,6 +71,9 @@ encryption:
   key: ${ENCRYPTION_KEY:12345678901234567890123456789012}  # 개발용 기본값 (32바이트)
   algorithm: AES/GCM/NoPadding
 
+gemini:
+  api-key: ${GEMINI_API_KEY}
+  model: gemini-1.5-flash
 ---
 # Production Profile
 spring:
