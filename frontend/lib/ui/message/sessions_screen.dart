@@ -1,6 +1,7 @@
 import 'package:dot_frontend/model/chat_session.dart';
 import 'package:dot_frontend/provider/chat_provider.dart';
 import 'package:dot_frontend/ui/widgets/background_design.dart';
+import 'package:dot_frontend/ui/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -16,14 +17,8 @@ class SessionsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const Text('메시지'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+      appBar: const CustomAppBar(
+        title: Text('메시지'),
       ),
       body: Stack(
         children: [

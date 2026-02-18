@@ -2,6 +2,7 @@ import 'package:dot_frontend/ui/widgets/background_design.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dot_frontend/provider/settings_provider.dart';
+import 'package:dot_frontend/ui/widgets/custom_app_bar.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -11,14 +12,8 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const Text('설정'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+      appBar: const CustomAppBar(
+        title: Text('설정'),
       ),
       body: Stack(
         children: [
@@ -29,7 +24,6 @@ class SettingsScreen extends StatelessWidget {
                 return ListView(
                   padding: const EdgeInsets.all(16.0),
                   children: [
-                    const SizedBox(height: 56), // AppBar height
                     // 섹션 1: 일반 설정
                     _buildSectionHeader('일반'),
                     _buildListTile(
