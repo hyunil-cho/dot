@@ -66,6 +66,11 @@ jwt:
   access-token-expiration: 900000      # 15분 (밀리초)
   refresh-token-expiration: 604800000  # 7일 (밀리초)
 
+# 암호화 키 (AES-256) - 개발 환경
+encryption:
+  key: ${ENCRYPTION_KEY:12345678901234567890123456789012}  # 개발용 기본값 (32바이트)
+  algorithm: AES/GCM/NoPadding
+
 ---
 # Production Profile
 spring:
@@ -96,13 +101,18 @@ logging:
 # AI API 설정 (프로덕션)
 ai:
   api:
-    base-url: ${AI_API_BASE_URL:http://ai-engine:8080/api/v1}  # 환경 변수로 주입
+    base-url: ${AI_API_BASE_URL:http://ai-engine:8080/api/v1}
 
 # JWT 설정 (프로덕션)
 jwt:
-  secret: ${JWT_SECRET}  # 환경 변수 필수
-  access-token-expiration: 900000      # 15분
-  refresh-token-expiration: 604800000  # 7일
+  secret: ${JWT_SECRET}  # 환경 변수 필수 (최소 256bit)
+  access-token-expiration: 900000      # 15분 (밀리초)
+  refresh-token-expiration: 604800000  # 7일 (밀리초)
+
+# 암호화 키 (AES-256)
+encryption:
+  key: ${ENCRYPTION_KEY}  # 환경 변수 필수 (32바이트 = 256bit)
+  algorithm: AES/GCM/NoPadding
 
 # AWS S3 설정
 aws:
@@ -113,16 +123,6 @@ aws:
     access-key: ${AWS_ACCESS_KEY}
     secret-key: ${AWS_SECRET_KEY}
 
-# JWT 설정
-jwt:
-  secret: ${JWT_SECRET}
-  expiration: 86400000  # 24시간 (밀리초)
-  refresh-expiration: 604800000  # 7일 (밀리초)
-
-# 암호화 키 (AES-256)
-encryption:
-  key: ${ENCRYPTION_KEY}
-  algorithm: AES/GCM/NoPadding
 
 
 
