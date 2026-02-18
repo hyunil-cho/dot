@@ -4,6 +4,7 @@ import 'package:dot_frontend/ui/widgets/background_design.dart';
 import 'package:dot_frontend/ui/widgets/custom_app_bar.dart';
 import 'package:dot_frontend/ui/widgets/persona_file_picker.dart'; // Add PersonaFilePicker import
 import 'package:dot_frontend/ui/widgets/custom_text_field.dart'; // Add CustomTextField import
+import 'package:dot_frontend/ui/widgets/phone_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -114,11 +115,9 @@ class _EditContactScreenState extends State<EditContactScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    CustomTextField(
+                    PhoneTextField(
                       controller: _phoneController,
                       labelText: '전화번호',
-                      icon: Icons.phone,
-                      keyboardType: TextInputType.phone,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return '전화번호를 입력해주세요.';
