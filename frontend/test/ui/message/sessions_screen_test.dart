@@ -1,3 +1,4 @@
+import 'package:dot_frontend/model/contact.dart';
 import 'package:dot_frontend/provider/auth_provider.dart';
 import 'package:dot_frontend/provider/chat_provider.dart';
 import 'package:dot_frontend/provider/contacts_provider.dart';
@@ -32,7 +33,15 @@ Widget createTestApp({
         auth.login('mock_token','refresh token'); // Assume authenticated
         return auth;
       }),
-      ChangeNotifierProvider(create: (_) => ContactsProvider()),
+      ChangeNotifierProvider(create: (_) {
+        final contacts = ContactsProvider();
+        // Add dummy contacts to match ChatProvider's sessions
+        contacts.addContact(Contact(id: '1', name: 'Alice', phoneNumber: '010-1234-5678', relationship: 'Friend'));
+        contacts.addContact(Contact(id: '2', name: 'Bob', phoneNumber: '010-2345-6789', relationship: 'Colleague'));
+        contacts.addContact(Contact(id: '3', name: 'Charlie', phoneNumber: '010-3456-7890', relationship: 'Family'));
+        contacts.addContact(Contact(id: '9', name: 'Ian', phoneNumber: '010-9012-3456', relationship: 'Colleague'));
+        return contacts;
+      }),
       ChangeNotifierProvider(create: (_) => SettingsProvider()),
       ChangeNotifierProvider(create: (_) => ChatProvider()),
     ],

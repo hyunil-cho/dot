@@ -104,7 +104,15 @@ class ContactDetailScreen extends StatelessWidget {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              ActionButton(icon: Icons.message, label: 'Message', color: Colors.blueAccent, onTap: () {}),
+                              ActionButton(
+                                icon: Icons.message,
+                                label: 'Message',
+                                color: Colors.blueAccent,
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                      context, '/chat/${contact.id}');
+                                },
+                              ),
                               ActionButton(
                                 icon: Icons.edit,
                                 label: 'Edit',

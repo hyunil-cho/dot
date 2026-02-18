@@ -169,7 +169,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
           ),
         ),
         trailing:
-            Icon(Icons.phone, color: Colors.greenAccent.withOpacity(0.8)),
+            Icon(Icons.message, color: Colors.greenAccent.withOpacity(0.8)),
         onTap: () {
           Navigator.pushNamed(context, '/contact/${contact.id}');
         },
