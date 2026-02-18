@@ -33,14 +33,44 @@ class SessionsScreen extends StatelessWidget {
           SafeArea(
             child: Consumer<ChatProvider>(
               builder: (context, chatProvider, child) {
-                final sessions = chatProvider.sessions;
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-                  itemCount: sessions.length,
-                  itemBuilder: (context, index) {
-                    final session = sessions[index];
-                    return _buildSessionTile(context, session);
-                  },
+                final sessions = chatProvider.filteredSessions;
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: TextField(
+                        style: const TextStyle(color: Colors.white),
+                        onChanged: (value) {
+                          chatProvider.setSearchQuery(value);
+                        },
+                        decoration: InputDecoration(
+                          hintText: '대화 검색',
+                          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                          prefixIcon: Icon(Icons.search,
+                              color: Colors.white.withOpacity(0.5)),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.1),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 0, horizontal: 16),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 16),
+                        itemCount: sessions.length,
+                        itemBuilder: (context, index) {
+                          final session = sessions[index];
+                          return _buildSessionTile(context, session);
+                        },
+                      ),
+                    ),
+                  ],
                 );
               },
             ),

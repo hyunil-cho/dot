@@ -51,6 +51,24 @@ class ChatProvider extends ChangeNotifier {
 
   List<ChatSession> get sessions => _sessions;
 
+  String _searchQuery = '';
+
+  void setSearchQuery(String query) {
+    _searchQuery = query;
+    notifyListeners();
+  }
+
+  List<ChatSession> get filteredSessions {
+    if (_searchQuery.isEmpty) {
+      return _sessions;
+    }
+    final query = _searchQuery.toLowerCase();
+    return _sessions.where((session) {
+      return session.contact.name.toLowerCase().contains(query) ||
+          session.lastMessage.toLowerCase().contains(query);
+    }).toList();
+  }
+
   List<Message> getMessages(String sessionId) {
     return _messages[sessionId] ?? [];
   }
