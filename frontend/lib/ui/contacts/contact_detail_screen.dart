@@ -1,13 +1,67 @@
+import 'package:dot_frontend/provider/auth_provider.dart';
+import 'package:dot_frontend/provider/contacts_provider.dart';
 import 'package:dot_frontend/ui/contacts/edit_contact_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:dot_frontend/model/contact.dart';
 import 'package:dot_frontend/ui/widgets/background_design.dart';
 import 'package:dot_frontend/ui/widgets/action_button.dart';
+import 'package:provider/provider.dart';
 
 class ContactDetailScreen extends StatelessWidget {
   final Contact contact;
 
   const ContactDetailScreen({super.key, required this.contact});
+
+  Future<void> _handleDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF4A148C),
+        title: const Text('연락처 삭제', style: TextStyle(color: Colors.white)),
+        content: Text('${contact.name} 연락처를 삭제하시겠습니까?',
+            style: const TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소', style: TextStyle(color: Colors.white70)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('삭제', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        final contactsProvider =
+            Provider.of<ContactsProvider>(context, listen: false);
+
+        final token = authProvider.accessToken;
+        if (token == null) throw Exception('인증 토큰이 없습니다.');
+
+        await contactsProvider.deleteContact(token, contact.id);
+
+        if (context.mounted) {
+          Navigator.pop(context); // 연락처 목록으로 돌아가기
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('연락처가 삭제되었습니다.')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('삭제 실패: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,8 +172,15 @@ class ContactDetailScreen extends StatelessWidget {
                                 label: 'Edit',
                                 color: Colors.orangeAccent,
                                 onTap: () {
-                                  Navigator.pushNamed(context, '/contact/${contact.id}/edit');
+                                  Navigator.pushNamed(
+                                      context, '/contact/${contact.id}/edit');
                                 },
+                              ),
+                              ActionButton(
+                                icon: Icons.delete,
+                                label: 'Delete',
+                                color: Colors.redAccent,
+                                onTap: () => _handleDelete(context),
                               ),
                             ],
                           ),

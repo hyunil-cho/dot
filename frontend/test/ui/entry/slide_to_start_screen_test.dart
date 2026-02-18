@@ -2,18 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dot_frontend/ui/entry/slide_to_start_screen.dart'; // 경로 수정
 import 'package:dot_frontend/ui/auth/login_screen.dart'; // 경로 수정
+import 'package:dot_frontend/provider/auth_provider.dart';
+import 'package:dot_frontend/provider/contacts_provider.dart';
+import 'package:dot_frontend/provider/chat_provider.dart';
+import 'package:dot_frontend/router.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  // 테스트 환경의 화면 크기 설정 (선택 사항, 기본값 800x600)
-  // tester.binding.window.physicalSizeTestValue = Size(400, 800);
-  // tester.binding.window.devicePixelRatioTestValue = 1.0;
-
   Widget createTestWidget() {
-    return MaterialApp(
-      home: const SlideToStartScreen(),
-      routes: {
-        '/login': (context) => const LoginScreen(),
-      },
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ContactsProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
+      ],
+      child: MaterialApp(
+        home: const SlideToStartScreen(),
+        onGenerateRoute: generateRoute,
+      ),
     );
   }
 

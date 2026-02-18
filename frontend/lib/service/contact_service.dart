@@ -64,9 +64,21 @@ class ContactService {
       } else {
         throw Exception('Failed to create contact: ${response.statusCode} - ${response.body}');
       }
-    } catch (e) {
-      print('연락처 생성 오류: $e');
-      rethrow;
+          } catch (e) {
+          print('연락처 생성 오류: $e');
+          rethrow;
+        }
+      }
+    
+      Future<void> deleteContact(String token, String contactId) async {
+        try {
+          final response = await _apiService.delete('/api/personas/$contactId', token: token);
+          if (response.statusCode != 200 && response.statusCode != 204) {
+            throw Exception('Failed to delete contact: ${response.statusCode} - ${response.body}');
+          }
+        } catch (e) {
+          print('연락처 삭제 오류: $e');
+          rethrow;
+        }
+      }
     }
-  }
-}

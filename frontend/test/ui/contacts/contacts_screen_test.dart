@@ -1,12 +1,24 @@
+import 'package:dot_frontend/model/contact.dart';
 import 'package:dot_frontend/provider/auth_provider.dart';
 import 'package:dot_frontend/provider/chat_provider.dart';
 import 'package:dot_frontend/provider/contacts_provider.dart';
 import 'package:dot_frontend/provider/settings_provider.dart';
 import 'package:dot_frontend/router.dart';
+import 'package:dot_frontend/service/contact_service.dart';
 import 'package:dot_frontend/ui/contacts/contact_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+
+class MockContactService extends Fake implements ContactService {
+  @override
+  Future<List<Contact>> getContacts(String token) async {
+    return [
+      Contact(id: '1', name: 'Alice', phoneNumber: '010-1234-5678', relationship: 'Friend'),
+      Contact(id: '2', name: 'Bob', phoneNumber: '010-2345-6789', relationship: 'Colleague'),
+    ];
+  }
+}
 
 // main.dart의 전체 라우팅 로직을 포함하는 테스트용 위젯 래퍼입니다.
 Widget createTestApp({required String initialRoute}) {
@@ -18,7 +30,7 @@ Widget createTestApp({required String initialRoute}) {
         auth.login('mock_token', "refresh token");
         return auth;
       }),
-      ChangeNotifierProvider(create: (_) => ContactsProvider()),
+      ChangeNotifierProvider(create: (_) => ContactsProvider(contactService: MockContactService())),
       ChangeNotifierProvider(create: (_) => SettingsProvider()),
       ChangeNotifierProvider(create: (_) => ChatProvider()),
     ],
@@ -36,6 +48,7 @@ void main() {
         (WidgetTester tester) async {
       // 1. 테스트 위젯을 빌드합니다. '/contacts' 경로에서 시작합니다.
       await tester.pumpWidget(createTestApp(initialRoute: '/contacts'));
+      await tester.pumpAndSettle();
 
       // 2. 초기 화면에 리스트 타일이 있는지 확인합니다.
       expect(find.byType(ListTile), findsWidgets);

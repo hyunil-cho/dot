@@ -3,7 +3,10 @@ import 'package:dot_frontend/model/contact.dart';
 import 'package:dot_frontend/service/contact_service.dart';
 
 class ContactsProvider extends ChangeNotifier {
-  final ContactService _contactService = ContactService();
+  final ContactService _contactService;
+  
+  ContactsProvider({ContactService? contactService}) 
+      : _contactService = contactService ?? ContactService();
   
   List<Contact> _contacts = [];
   bool _isLoading = false;
@@ -69,6 +72,17 @@ class ContactsProvider extends ChangeNotifier {
       return _contacts.firstWhere((c) => c.id == id);
     } catch (e) {
       return null;
+    }
+  }
+
+  // 연락처 삭제
+  Future<void> deleteContact(String token, String contactId) async {
+    try {
+      await _contactService.deleteContact(token, contactId);
+      _contacts.removeWhere((c) => c.id == contactId);
+      notifyListeners();
+    } catch (e) {
+      rethrow;
     }
   }
 }
