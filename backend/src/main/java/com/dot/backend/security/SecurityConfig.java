@@ -10,6 +10,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 /**
  * Spring Security 설정
@@ -24,6 +25,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -31,8 +33,8 @@ public class SecurityConfig {
             // CSRF 비활성화 (JWT 사용)
             .csrf(csrf -> csrf.disable())
 
-            // CORS 설정 (추후 프론트엔드 연동 시 설정)
-            .cors(cors -> cors.disable())
+            // CORS 설정 활성화 (Flutter Web 연동)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
 
             // Session 사용 안 함
             .sessionManagement(session ->

@@ -74,8 +74,12 @@ public class Persona extends BaseEntity {
         if (name != null && !name.isBlank()) {
             this.name = name;
         }
-        this.relationship = relationship;
-        this.memo = memo;
+        if (relationship != null) {
+            this.relationship = relationship;
+        }
+        if (memo != null) {
+            this.memo = memo;
+        }
     }
 
     public void updateProfileImage(String imageUrl) {

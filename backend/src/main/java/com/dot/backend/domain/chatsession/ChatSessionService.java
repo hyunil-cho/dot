@@ -2,8 +2,6 @@ package com.dot.backend.domain.chatsession;
 
 import com.dot.backend.domain.chatsession.dto.UploadResponse;
 import com.dot.backend.domain.chatsession.repository.ChatSessionRepository;
-import com.dot.backend.domain.persona.Persona;
-import com.dot.backend.domain.persona.repository.PersonaRepository;
 import com.dot.backend.domain.user.User;
 import com.dot.backend.domain.user.repository.UserRepository;
 import com.dot.backend.parser.KakaoTxtParser;
@@ -62,7 +60,8 @@ public class ChatSessionService {
 
         chatSessionRepository.save(session);
 
-        return new UploadResponse(session.getId(), speakers);
+        // TODO: 화자 선택 시 sessionId 필요 - UploadResponse에 sessionId 필드 추가 필요
+        return new UploadResponse(speakers);
     }
 
     /**
