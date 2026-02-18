@@ -63,6 +63,46 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  ChatSession? getSessionByContactId(String contactId) {
+    try {
+      return _sessions.firstWhere((s) => s.contact.id == contactId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  String getOrCreateSession(Contact contact) {
+    final sessionId = _getOrCreateSessionInternal(contact);
+    if (sessionId.startsWith('new_')) {
+      // It was newly created, but we need to notify listeners 
+      // safely if this was called during build
+      Future.microtask(() => notifyListeners());
+      return sessionId.replaceFirst('new_', '');
+    }
+    return sessionId;
+  }
+
+  String _getOrCreateSessionInternal(Contact contact) {
+    final existingSession = getSessionByContactId(contact.id);
+
+    if (existingSession != null) {
+      return existingSession.id;
+    }
+
+    // Create new session
+    final newSessionId = 'session_${DateTime.now().millisecondsSinceEpoch}';
+    final newSession = ChatSession(
+      id: newSessionId,
+      contact: contact,
+      lastMessage: '',
+      lastMessageAt: DateTime.now(),
+    );
+
+    _sessions.insert(0, newSession);
+    _messages[newSessionId] = [];
+    return 'new_$newSessionId';
+  }
+
   void sendMessage(String sessionId, String text) {
     final newMessage = Message(
       id: 'msg_${DateTime.now().millisecondsSinceEpoch}',

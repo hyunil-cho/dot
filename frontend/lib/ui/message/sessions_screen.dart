@@ -20,6 +20,13 @@ class SessionsScreen extends StatelessWidget {
       appBar: const CustomAppBar(
         title: Text('메시지'),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/select_contact');
+        },
+        backgroundColor: const Color(0xFF6C63FF),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
       body: Stack(
         children: [
           const BackgroundDesign(),
@@ -101,7 +108,7 @@ class SessionsScreen extends StatelessWidget {
         ],
       ),
       onTap: () {
-        Navigator.pushNamed(context, '/chat/${session.id}');
+        Navigator.pushNamed(context, '/chat/${session.contact.id}');
       },
     );
   }

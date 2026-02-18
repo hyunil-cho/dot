@@ -11,6 +11,7 @@ import 'package:dot_frontend/ui/entry/slide_to_start_screen.dart';
 import 'package:dot_frontend/ui/home/home_screen.dart';
 import 'package:dot_frontend/ui/message/chat_screen.dart';
 import 'package:dot_frontend/ui/message/sessions_screen.dart';
+import 'package:dot_frontend/ui/message/select_contact_screen.dart';
 import 'package:dot_frontend/ui/settings/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -44,13 +45,22 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
       final chatProvider =
           Provider.of<ChatProvider>(context, listen: false);
 
-      // /chat/:sessionId
+      // /chat/:contactId
       if (uri.pathSegments.length == 2 && uri.pathSegments.first == 'chat') {
-        final id = uri.pathSegments[1];
-        final session = chatProvider.getSessionById(id);
-        return session != null
-            ? ChatScreen(session: session)
-            : const HomeScreen(); // 혹은 404 페이지
+        final contactId = uri.pathSegments[1];
+        final contact = contactsProvider.getContactById(contactId);
+        
+        if (contact != null) {
+          // getOrCreateSession might notifyListeners, which is usually not allowed during build.
+          // However, in this router setup, it's called within a MaterialPageRoute builder.
+          // If it causes issues, we might need a different approach.
+          chatProvider.getOrCreateSession(contact);
+          final session = chatProvider.getSessionByContactId(contactId);
+          if (session != null) {
+            return ChatScreen(session: session);
+          }
+        }
+        return const HomeScreen(); // Or 404
       }
 
       // /contact/:id/edit
@@ -92,6 +102,8 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
           return const SettingsScreen();
         case '/add_contact':
           return const AddContactScreen();
+        case '/select_contact':
+          return const SelectContactScreen();
         default:
           return isAuthenticated
               ? const HomeScreen()
