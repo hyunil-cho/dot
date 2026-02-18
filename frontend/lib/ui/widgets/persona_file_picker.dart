@@ -14,10 +14,12 @@ class PersonaFileData {
 
 class PersonaFilePicker extends StatefulWidget {
   final ValueChanged<List<PersonaFileData>> onFilesChanged;
+  final int? maxFiles; // 최대 파일 개수 제한
 
   const PersonaFilePicker({
     super.key,
     required this.onFilesChanged,
+    this.maxFiles,
   });
 
   @override
@@ -36,6 +38,19 @@ class _PersonaFilePickerState extends State<PersonaFilePicker> {
   }
 
   void _addPersonaFile() async {
+    // 파일 개수 제한 확인
+    if (widget.maxFiles != null && _personaFiles.length >= widget.maxFiles!) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('최대 ${widget.maxFiles}개의 파일만 추가할 수 있습니다.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return;
+    }
+
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       allowMultiple: false, // 한 번에 하나의 파일만 선택
       type: FileType.custom,
@@ -176,17 +191,29 @@ class _PersonaFilePickerState extends State<PersonaFilePicker> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isLimitReached = widget.maxFiles != null && _personaFiles.length >= widget.maxFiles!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildSectionHeader('페르소나 학습 (선택 사항)'),
         OutlinedButton.icon(
-          onPressed: _addPersonaFile,
-          icon: const Icon(Icons.add, color: Colors.white70),
-          label: const Text('새 대화 파일 추가', style: TextStyle(color: Colors.white)),
+          onPressed: isLimitReached ? null : _addPersonaFile,
+          icon: Icon(
+            Icons.add,
+            color: isLimitReached ? Colors.white24 : Colors.white70,
+          ),
+          label: Text(
+            '새 대화 파일 추가',
+            style: TextStyle(
+              color: isLimitReached ? Colors.white24 : Colors.white,
+            ),
+          ),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size(double.infinity, 48),
-            side: BorderSide(color: Colors.white.withOpacity(0.3)),
+            side: BorderSide(
+              color: isLimitReached ? Colors.white10 : Colors.white.withOpacity(0.3),
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),

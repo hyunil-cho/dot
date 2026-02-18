@@ -1,9 +1,11 @@
 import 'package:dot_frontend/model/contact.dart';
+import 'package:dot_frontend/provider/auth_provider.dart';
 import 'package:dot_frontend/provider/contacts_provider.dart';
+import 'package:dot_frontend/service/contact_service.dart';
 import 'package:dot_frontend/ui/widgets/background_design.dart';
 import 'package:dot_frontend/ui/widgets/custom_app_bar.dart';
-import 'package:dot_frontend/ui/widgets/persona_file_picker.dart'; // New import
-import 'package:dot_frontend/ui/widgets/custom_text_field.dart'; // Add CustomTextField import
+import 'package:dot_frontend/ui/widgets/persona_file_picker.dart';
+import 'package:dot_frontend/ui/widgets/custom_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -16,12 +18,14 @@ class AddContactScreen extends StatefulWidget {
 
 class _AddContactScreenState extends State<AddContactScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _contactService = ContactService();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _relationshipController = TextEditingController();
   final _memoController = TextEditingController();
 
-  List<PersonaFileData> _personaFiles = []; // Changed type and removed private
+  List<PersonaFileData> _personaFiles = [];
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -29,42 +33,72 @@ class _AddContactScreenState extends State<AddContactScreen> {
     _phoneController.dispose();
     _relationshipController.dispose();
     _memoController.dispose();
-    // PersonaFilePicker will manage its own controllers disposal
     super.dispose();
   }
 
-  void _handleSaveContact() {
+  Future<void> _handleSaveContact() async {
     if (_formKey.currentState!.validate()) {
-      final newContact = Contact(
-        id: DateTime
-            .now()
-            .millisecondsSinceEpoch
-            .toString(),
-        name: _nameController.text,
-        phoneNumber: _phoneController.text,
-        relationship: _relationshipController.text,
-        memo: _memoController.text,
-      );
+      setState(() {
+        _isLoading = true;
+      });
 
-      Provider.of<ContactsProvider>(context, listen: false)
-          .addContact(newContact);
+      try {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        final token = authProvider.accessToken;
 
-      // 페르소나 데이터 처리
-      if (_personaFiles.isNotEmpty) {
-        for (var entry in _personaFiles) {
-          if (entry.nameController.text.isNotEmpty) {
-            print('Persona Target Name: ${entry.nameController.text}');
-            print('File: ${entry.file.name}');
-            // TODO: 실제 파일 업로드 및 페르소나 데이터 저장 로직 구현
-          }
+        if (token == null) {
+          throw Exception('인증 토큰이 없습니다. 다시 로그인해주세요.');
+        }
+
+        // 첫 번째 페르소나 파일 정보 가져오기 (최대 1개로 제한됨)
+        String? targetName;
+        List<int>? fileBytes;
+        String? fileName;
+
+        if (_personaFiles.isNotEmpty) {
+          final personaData = _personaFiles.first;
+          targetName = personaData.nameController.text;
+          fileBytes = personaData.file.bytes?.toList();
+          fileName = personaData.file.name;
+        }
+
+        final newContact = await _contactService.createContact(
+          token: token,
+          name: _nameController.text,
+          phoneNumber: _phoneController.text,
+          relationship: _relationshipController.text,
+          memo: _memoController.text,
+          personaTargetName: targetName,
+          fileBytes: fileBytes,
+          fileName: fileName,
+        );
+
+        if (mounted) {
+          Provider.of<ContactsProvider>(context, listen: false)
+              .addContact(newContact);
+
+          Navigator.of(context).pop();
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('새로운 연락처가 저장되었습니다.')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('저장 실패: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
         }
       }
-
-      Navigator.of(context).pop();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('새로운 연락처가 저장되었습니다.')),
-      );
     }
   }
 
@@ -127,6 +161,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                     ),
 
                     PersonaFilePicker(
+                      maxFiles: 1,
                       onFilesChanged: (newFiles) {
                         setState(() {
                           _personaFiles = newFiles;
@@ -136,9 +171,18 @@ class _AddContactScreenState extends State<AddContactScreen> {
 
                     const SizedBox(height: 40),
                     ElevatedButton.icon(
-                      onPressed: _handleSaveContact,
-                      icon: const Icon(Icons.save),
-                      label: const Text('저장하기'),
+                      onPressed: _isLoading ? null : _handleSaveContact,
+                      icon: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF4A148C),
+                              ),
+                            )
+                          : const Icon(Icons.save),
+                      label: Text(_isLoading ? '저장 중...' : '저장하기'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         backgroundColor: Colors.white,
