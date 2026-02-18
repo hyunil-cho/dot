@@ -2,6 +2,8 @@ import 'package:dot_frontend/model/contact.dart';
 import 'package:dot_frontend/provider/contacts_provider.dart';
 import 'package:dot_frontend/ui/widgets/background_design.dart';
 import 'package:dot_frontend/ui/widgets/custom_app_bar.dart';
+import 'package:dot_frontend/ui/widgets/persona_file_picker.dart'; // New import
+import 'package:dot_frontend/ui/widgets/custom_text_field.dart'; // Add CustomTextField import
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -19,37 +21,53 @@ class _AddContactScreenState extends State<AddContactScreen> {
   final _relationshipController = TextEditingController();
   final _memoController = TextEditingController();
 
+  List<PersonaFileData> _personaFiles = []; // Changed type and removed private
+
   @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
     _relationshipController.dispose();
     _memoController.dispose();
+    // PersonaFilePicker will manage its own controllers disposal
     super.dispose();
   }
 
   void _handleSaveContact() {
     if (_formKey.currentState!.validate()) {
       final newContact = Contact(
-        // ID는 임시로 현재 시간을 사용하거나, 실제로는 서버에서 생성
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: DateTime
+            .now()
+            .millisecondsSinceEpoch
+            .toString(),
         name: _nameController.text,
         phoneNumber: _phoneController.text,
         relationship: _relationshipController.text,
         memo: _memoController.text,
       );
 
-      // Provider를 통해 연락처 추가
-      Provider.of<ContactsProvider>(context, listen: false).addContact(newContact);
+      Provider.of<ContactsProvider>(context, listen: false)
+          .addContact(newContact);
 
-      // 이전 화면으로 돌아가기
+      // 페르소나 데이터 처리
+      if (_personaFiles.isNotEmpty) {
+        for (var entry in _personaFiles) {
+          if (entry.nameController.text.isNotEmpty) {
+            print('Persona Target Name: ${entry.nameController.text}');
+            print('File: ${entry.file.name}');
+            // TODO: 실제 파일 업로드 및 페르소나 데이터 저장 로직 구현
+          }
+        }
+      }
+
       Navigator.of(context).pop();
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('새로운 연락처가 저장되었습니다.')),
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +88,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 40),
-                    _buildTextField(
+                    CustomTextField(
                       controller: _nameController,
                       labelText: '이름',
                       icon: Icons.person,
@@ -82,7 +100,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    _buildTextField(
+                    CustomTextField(
                       controller: _phoneController,
                       labelText: '전화번호',
                       icon: Icons.phone,
@@ -95,18 +113,27 @@ class _AddContactScreenState extends State<AddContactScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    _buildTextField(
+                    CustomTextField(
                       controller: _relationshipController,
                       labelText: '관계',
                       icon: Icons.people,
                     ),
                     const SizedBox(height: 16),
-                    _buildTextField(
+                    CustomTextField(
                       controller: _memoController,
                       labelText: '메모',
                       icon: Icons.note,
                       maxLines: 3,
                     ),
+
+                    PersonaFilePicker(
+                      onFilesChanged: (newFiles) {
+                        setState(() {
+                          _personaFiles = newFiles;
+                        });
+                      },
+                    ),
+
                     const SizedBox(height: 40),
                     ElevatedButton.icon(
                       onPressed: _handleSaveContact,
@@ -132,42 +159,6 @@ class _AddContactScreenState extends State<AddContactScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String labelText,
-    required IconData icon,
-    TextInputType? keyboardType,
-    int? maxLines = 1,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: labelText,
-        labelStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        prefixIcon: Icon(icon, color: Colors.white70),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF6C63FF)),
-        ),
-      ),
-      validator: validator,
     );
   }
 }

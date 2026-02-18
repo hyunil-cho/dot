@@ -2,6 +2,8 @@ import 'package:dot_frontend/model/contact.dart';
 import 'package:dot_frontend/provider/contacts_provider.dart';
 import 'package:dot_frontend/ui/widgets/background_design.dart';
 import 'package:dot_frontend/ui/widgets/custom_app_bar.dart';
+import 'package:dot_frontend/ui/widgets/persona_file_picker.dart'; // Add PersonaFilePicker import
+import 'package:dot_frontend/ui/widgets/custom_text_field.dart'; // Add CustomTextField import
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -21,14 +23,18 @@ class _EditContactScreenState extends State<EditContactScreen> {
   late TextEditingController _relationshipController;
   late TextEditingController _memoController;
 
+  List<PersonaFileData> _personaFiles = []; // Changed type
+
   @override
   void initState() {
     super.initState();
     // 컨트롤러를 기존 연락처 정보로 초기화
     _nameController = TextEditingController(text: widget.contact.name);
     _phoneController = TextEditingController(text: widget.contact.phoneNumber);
-    _relationshipController = TextEditingController(text: widget.contact.relationship);
+    _relationshipController =
+        TextEditingController(text: widget.contact.relationship);
     _memoController = TextEditingController(text: widget.contact.memo);
+    // TODO: 기존 페르소나 파일 및 이름 데이터를 로드하는 로직 구현
   }
 
   @override
@@ -37,6 +43,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
     _phoneController.dispose();
     _relationshipController.dispose();
     _memoController.dispose();
+    // PersonaFilePicker will manage its own controllers disposal
     super.dispose();
   }
 
@@ -52,12 +59,24 @@ class _EditContactScreenState extends State<EditContactScreen> {
       );
 
       // Provider를 통해 연락처 업데이트
-      Provider.of<ContactsProvider>(context, listen: false).updateContact(updatedContact);
+      Provider.of<ContactsProvider>(context, listen: false)
+          .updateContact(updatedContact);
+
+      // 페르소나 데이터 처리
+      if (_personaFiles.isNotEmpty) {
+        for (var entry in _personaFiles) {
+          if (entry.nameController.text.isNotEmpty) {
+            print('Persona Target Name: ${entry.nameController.text}');
+            print('File: ${entry.file.name}');
+            // TODO: 실제 파일 업로드 및 페르소나 데이터 저장 로직 구현
+          }
+        }
+      }
 
       // 상세 화면으로 돌아가기 (두 번 pop)
       int count = 0;
       Navigator.of(context).popUntil((_) => count++ >= 2);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('연락처가 수정되었습니다.')),
       );
@@ -83,7 +102,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 40),
-                    _buildTextField(
+                    CustomTextField(
                       controller: _nameController,
                       labelText: '이름',
                       icon: Icons.person,
@@ -95,7 +114,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    _buildTextField(
+                    CustomTextField(
                       controller: _phoneController,
                       labelText: '전화번호',
                       icon: Icons.phone,
@@ -108,18 +127,27 @@ class _EditContactScreenState extends State<EditContactScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    _buildTextField(
+                    CustomTextField(
                       controller: _relationshipController,
                       labelText: '관계',
                       icon: Icons.people,
                     ),
                     const SizedBox(height: 16),
-                    _buildTextField(
+                    CustomTextField(
                       controller: _memoController,
                       labelText: '메모',
                       icon: Icons.note,
                       maxLines: 3,
                     ),
+
+                    PersonaFilePicker(
+                      onFilesChanged: (newFiles) {
+                        setState(() {
+                          _personaFiles = newFiles;
+                        });
+                      },
+                    ),
+
                     const SizedBox(height: 40),
                     ElevatedButton.icon(
                       onPressed: _handleUpdateContact,
@@ -145,42 +173,6 @@ class _EditContactScreenState extends State<EditContactScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String labelText,
-    required IconData icon,
-    TextInputType? keyboardType,
-    int? maxLines = 1,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: labelText,
-        labelStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        prefixIcon: Icon(icon, color: Colors.white70),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF6C63FF)),
-        ),
-      ),
-      validator: validator,
     );
   }
 }
