@@ -1,5 +1,6 @@
 package com.dot.backend.service;
 
+import com.dot.backend.domain.chat.repository.ChatMessageRepository;
 import com.dot.backend.domain.chatsession.ChatSession;
 import com.dot.backend.domain.chatsession.ChatSessionStatus;
 import com.dot.backend.domain.chatsession.dto.ChatSessionResponse;
@@ -9,6 +10,7 @@ import com.dot.backend.domain.persona.Persona;
 import com.dot.backend.domain.persona.repository.ConversationSampleRepository;
 import com.dot.backend.domain.persona.repository.PersonaRepository;
 import com.dot.backend.domain.user.User;
+import com.dot.backend.dto.chat.ChatSessionListResponse;
 import com.dot.backend.util.EncryptionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +29,25 @@ public class ChatSessionService {
     private final ChatSessionRepository chatSessionRepository;
     private final PersonaRepository personaRepository;
     private final ConversationSampleRepository conversationSampleRepository;
+    private final ChatMessageRepository chatMessageRepository;
     private final EncryptionUtil encryptionUtil;
+
+    /**
+     * 사용자의 모든 채팅 세션 목록 조회
+     *
+     * @param user 현재 사용자
+     * @return List<ChatSessionListResponse>
+     */
+    @Transactional(readOnly = true)
+    public List<ChatSessionListResponse> getSessions(User user) {
+        log.debug("Fetching all chat sessions for user: {}", user.getEmail());
+
+        List<ChatSession> sessions = chatSessionRepository.findByUserOrderByUpdatedAtDesc(user);
+
+        return sessions.stream()
+                .map(this::toListResponse)
+                .collect(Collectors.toList());
+    }
 
     /**
      * 채팅 세션 생성
@@ -126,7 +147,26 @@ public class ChatSessionService {
                 .startedAt(session.getStartedAt())
                 .build();
     }
+    
+    /**
+     * ChatSession -> List Response DTO 변환
+     */
+    private ChatSessionListResponse toListResponse(ChatSession session) {
+        String lastMessage = chatMessageRepository
+                .findFirstByPersonaIdAndUserIdOrderByCreatedAtDesc(session.getPersona().getId(), session.getUser().getId())
+                .map(m -> m.getRole() == com.dot.backend.domain.chat.ChatMessage.Role.USER ? "나: " + m.getContent() : m.getContent())
+                .orElse("아직 대화가 없습니다.");
+
+        return ChatSessionListResponse.builder()
+                .sessionId(session.getId())
+                .personaId(session.getPersona().getId())
+                .personaName(encryptionUtil.decrypt(session.getPersona().getName()))
+                .lastMessage(lastMessage)
+                .updatedAt(session.getUpdatedAt())
+                .build();
+    }
 }
+
 
 
 

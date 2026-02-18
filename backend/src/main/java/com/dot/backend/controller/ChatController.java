@@ -4,11 +4,13 @@ import com.dot.backend.domain.chatsession.dto.ChatSessionResponse;
 import com.dot.backend.domain.user.User;
 import com.dot.backend.domain.user.repository.UserRepository;
 import com.dot.backend.dto.chat.ChatMessageResponse;
+import com.dot.backend.dto.chat.ChatSessionListResponse;
 import com.dot.backend.dto.chat.SendMessageRequest;
 import com.dot.backend.service.ChatService;
 import com.dot.backend.service.ChatSessionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,6 +33,7 @@ import java.util.List;
  * 채팅 API 컨트롤러
  *
  * - POST /api/chat-sessions - 채팅 세션 생성
+ * - GET /api/chat-sessions - 채팅 세션 목록 조회
  * - POST /api/chat-sessions/{sessionId}/messages - 메시지 전송
  * - GET /api/chat-sessions/{sessionId}/messages - 대화 이력 조회
  */
@@ -45,9 +48,6 @@ public class ChatController {
     private final ChatService chatService;
     private final UserRepository userRepository;
 
-    /**
-     * 채팅 세션 생성
-     */
     @PostMapping
     @Operation(
         summary = "채팅 세션 생성",
@@ -105,6 +105,57 @@ public class ChatController {
         return ResponseEntity
                 .created(URI.create("/api/chat-sessions/" + response.getSessionId()))
                 .body(response);
+    }
+    
+    @GetMapping
+    @Operation(
+        summary = "채팅 세션 목록 조회",
+        description = "사용자의 모든 채팅 세션 목록을 최신순으로 조회합니다.\n\n" +
+            "**반환 정보:**\n" +
+            "- `sessionId`: 채팅 세션 ID\n" +
+            "- `personaId`: 페르소나 ID\n" +
+            "- `personaName`: 페르소나 이름\n" +
+            "- `lastMessage`: 마지막 대화 내용 (상대방 메시지는 그대로, 내 메시지는 '나: ' 접두사 추가)\n" +
+            "- `updatedAt`: 마지막 대화 시간\n\n" +
+            "**인증 필요:** Bearer Token"
+    )
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "조회 성공",
+            content = @Content(
+                array = @ArraySchema(schema = @Schema(implementation = ChatSessionListResponse.class)),
+                examples = @ExampleObject(
+                    value = "[\n" +
+                        "  {\n" +
+                        "    \"sessionId\": 124,\n" +
+                        "    \"personaId\": 2,\n" +
+                        "    \"personaName\": \"친구\",\n" +
+                        "    \"lastMessage\": \"나: 저녁에 뭐해?\",\n" +
+                        "    \"updatedAt\": \"2026-02-18T18:00:00\"\n" +
+                        "  },\n" +
+                        "  {\n" +
+                        "    \"sessionId\": 123,\n" +
+                        "    \"personaId\": 1,\n" +
+                        "    \"personaName\": \"엄마\",\n" +
+                        "    \"lastMessage\": \"어, 왔니? 밥은 먹었어?\",\n" +
+                        "    \"updatedAt\": \"2026-02-18T10:30:05\"\n" +
+                        "  }\n" +
+                        "]"
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "인증 실패"
+        )
+    })
+    public ResponseEntity<List<ChatSessionListResponse>> getSessions(
+        @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        User currentUser = getCurrentUser(userDetails);
+        List<ChatSessionListResponse> response = chatSessionService.getSessions(currentUser);
+        return ResponseEntity.ok(response);
     }
 
     /**
