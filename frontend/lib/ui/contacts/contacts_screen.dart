@@ -1,9 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:dot_frontend/provider/contacts_provider.dart';
 import 'package:dot_frontend/model/contact.dart';
-import 'package:dot_frontend/ui/contacts/add_contact_screen.dart';
-import 'package:dot_frontend/ui/contacts/contact_detail_screen.dart';
+import 'package:dot_frontend/ui/widgets/background_design.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class ContactsScreen extends StatelessWidget {
   const ContactsScreen({super.key});
@@ -12,6 +11,16 @@ class ContactsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text('연락처'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.pushNamed(context, '/add_contact');
@@ -19,73 +28,65 @@ class ContactsScreen extends StatelessWidget {
         backgroundColor: const Color(0xFF6C63FF),
         child: const Icon(Icons.add, color: Colors.white),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // 상단 제목 및 검색창
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          const BackgroundDesign(),
+          SafeArea(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '연락처',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                // 검색창
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: TextField(
+                    style: const TextStyle(color: Colors.white),
+                    onChanged: (value) {
+                      Provider.of<ContactsProvider>(context, listen: false)
+                          .setSearchQuery(value);
+                    },
+                    decoration: InputDecoration(
+                      hintText: '검색',
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                      prefixIcon:
+                          Icon(Icons.search, color: Colors.white.withOpacity(0.5)),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.1),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding:
+                          const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                // 검색창
-                TextField(
-                  style: const TextStyle(color: Colors.white),
-                  onChanged: (value) {
-                    Provider.of<ContactsProvider>(context, listen: false)
-                        .setSearchQuery(value);
-                  },
-                  decoration: InputDecoration(
-                    hintText: '검색',
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                    prefixIcon:
-                        Icon(Icons.search, color: Colors.white.withOpacity(0.5)),
-                    filled: true,
-                    fillColor: Colors.white.withOpacity(0.1),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+
+                // 연락처 목록
+                Expanded(
+                  child: Consumer<ContactsProvider>(
+                    builder: (context, contactsProvider, child) {
+                      final contacts = contactsProvider.filteredContacts;
+
+                      if (contacts.isEmpty) {
+                        return Center(
+                          child: Text(
+                            '검색 결과가 없습니다.',
+                            style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                          ),
+                        );
+                      }
+
+                      return ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: contacts.length,
+                        itemBuilder: (context, index) {
+                          final contact = contacts[index];
+                          return _buildContactTile(context, contact);
+                        },
+                      );
+                    },
                   ),
                 ),
               ],
-            ),
-          ),
-
-          // 연락처 목록
-          Expanded(
-            child: Consumer<ContactsProvider>(
-              builder: (context, contactsProvider, child) {
-                final contacts = contactsProvider.filteredContacts;
-
-                if (contacts.isEmpty) {
-                  return Center(
-                    child: Text(
-                      '검색 결과가 없습니다.',
-                      style: TextStyle(color: Colors.white.withOpacity(0.5)),
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: contacts.length,
-                  itemBuilder: (context, index) {
-                    final contact = contacts[index];
-                    return _buildContactTile(context, contact);
-                  },
-                );
-              },
             ),
           ),
         ],

@@ -5,10 +5,13 @@ import 'package:dot_frontend/ui/auth/login_screen.dart';
 import 'package:dot_frontend/ui/auth/signup_screen.dart';
 import 'package:dot_frontend/ui/contacts/add_contact_screen.dart';
 import 'package:dot_frontend/ui/contacts/contact_detail_screen.dart';
+import 'package:dot_frontend/ui/contacts/contacts_screen.dart';
 import 'package:dot_frontend/ui/contacts/edit_contact_screen.dart';
 import 'package:dot_frontend/ui/entry/slide_to_start_screen.dart';
-import 'package:dot_frontend/ui/home/main_screen.dart';
+import 'package:dot_frontend/ui/home/home_screen.dart';
 import 'package:dot_frontend/ui/message/chat_screen.dart';
+import 'package:dot_frontend/ui/message/sessions_screen.dart';
+import 'package:dot_frontend/ui/settings/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -20,9 +23,6 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
   final uri = Uri.parse(settings.name ?? '');
   var isPublicRoute = publicRoutes.contains(uri.path);
 
-  // /contact/:id 와 /contact/:id/edit는 인증이 필요한 비공개 경로지만, publicRoutes에 포함시키지 않음
-  // 아래 로직에서 직접 처리
-
   return MaterialPageRoute(
     builder: (context) {
       // 3. 현재 인증 상태 확인
@@ -30,23 +30,12 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
       final isAuthenticated = auth.isAuthenticated;
 
       // 4. 라우팅 로직 (가드)
-
-      // Case A: 비로그인 상태인데 비공개 경로에 접근하려는 경우 -> 로그인 화면으로
-      // 동적 경로도 고려해야 하므로, public이 아닌 모든 경로는 비공개로 간주
       if (!isAuthenticated && !isPublicRoute) {
-        // /contact/:id 형태의 경로도 비공개 경로에 포함하여 처리
-        final isDynamicContactRoute =
-            uri.pathSegments.length > 1 && uri.pathSegments.first == 'contact';
-        if (!isDynamicContactRoute && uri.path != '/login') {
-          return const LoginScreen();
-        } else if (isDynamicContactRoute) {
-          return const LoginScreen();
-        }
+        return const LoginScreen();
       }
 
-      // Case B: 이미 로그인했는데 공개 경로에 접근하려는 경우 -> 홈으로
       if (isAuthenticated && isPublicRoute) {
-        return const MainScreen(selectedIndex: 0);
+        return const HomeScreen();
       }
 
       // 5. 각 경로에 맞는 위젯 반환 (동적 경로 우선 처리)
@@ -56,13 +45,12 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
           Provider.of<ChatProvider>(context, listen: false);
 
       // /chat/:sessionId
-      if (uri.pathSegments.length == 2 &&
-          uri.pathSegments.first == 'chat') {
+      if (uri.pathSegments.length == 2 && uri.pathSegments.first == 'chat') {
         final id = uri.pathSegments[1];
         final session = chatProvider.getSessionById(id);
         return session != null
             ? ChatScreen(session: session)
-            : const MainScreen(selectedIndex: 0); // 혹은 404 페이지
+            : const HomeScreen(); // 혹은 404 페이지
       }
 
       // /contact/:id/edit
@@ -73,7 +61,7 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
         final contact = contactsProvider.getContactById(id);
         return contact != null
             ? EditContactScreen(contact: contact)
-            : const MainScreen(selectedIndex: 0); // 혹은 404 페이지
+            : const HomeScreen(); // 혹은 404 페이지
       }
 
       // /contact/:id
@@ -83,7 +71,7 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
         final contact = contactsProvider.getContactById(id);
         return contact != null
             ? ContactDetailScreen(contact: contact)
-            : const MainScreen(selectedIndex: 0); // 혹은 404 페이지
+            : const HomeScreen(); // 혹은 404 페이지
       }
 
       // 정적 경로 처리
@@ -95,17 +83,18 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
         case '/signup':
           return const SignUpScreen();
         case '/home':
-          return const MainScreen(selectedIndex: 0);
+          return const HomeScreen();
+        case '/messages':
+          return const SessionsScreen();
         case '/contacts':
-          return const MainScreen(selectedIndex: 1);
+          return const ContactsScreen();
         case '/settings':
-          return const MainScreen(selectedIndex: 2);
+          return const SettingsScreen();
         case '/add_contact':
           return const AddContactScreen();
         default:
-          // 알 수 없는 경로는 에러 페이지나 홈으로 (로그인 상태에 따라)
           return isAuthenticated
-              ? const MainScreen(selectedIndex: 0)
+              ? const HomeScreen()
               : const SlideToStartScreen();
       }
     },

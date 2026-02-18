@@ -3,7 +3,9 @@ import 'package:dot_frontend/provider/chat_provider.dart';
 import 'package:dot_frontend/provider/contacts_provider.dart';
 import 'package:dot_frontend/provider/settings_provider.dart';
 import 'package:dot_frontend/router.dart';
+import 'package:dot_frontend/ui/home/home_screen.dart';
 import 'package:dot_frontend/ui/message/chat_screen.dart';
+import 'package:dot_frontend/ui/message/sessions_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -29,31 +31,36 @@ Widget createTestApp({required String initialRoute}) {
 }
 
 void main() {
-  group('SessionsScreen Navigation Test', () {
+  group('Message Navigation Flow Test', () {
     testWidgets(
-        'Tapping a session entry navigates to the chat screen with correct data',
+        'Tapping message icon on home screen navigates to sessions, then to chat screen',
         (WidgetTester tester) async {
-      // 1. Build the widget tree, starting at the '/home' route (Messages tab).
+      // 1. Build the widget tree, starting at the '/home' route.
       await tester.pumpWidget(createTestApp(initialRoute: '/home'));
 
-      // 2. Verify the initial screen is the sessions list.
-      final titleFinder = find.byWidgetPredicate(
-        (widget) => widget is Text && widget.data == '메시지' && widget.style?.fontSize == 32,
-      );
-      expect(titleFinder, findsOneWidget);
-      expect(find.text('Alice'), findsOneWidget);
+      // 2. Verify the initial screen is the HomeScreen and find the '메시지' icon.
+      expect(find.byType(HomeScreen), findsOneWidget);
+      final messageIcon = find.widgetWithText(HomeAppIcon, '메시지');
+      expect(messageIcon, findsOneWidget);
 
-      // 3. Find and tap the first session entry ('Alice').
+      // 3. Tap the '메시지' icon to navigate to the sessions screen.
+      await tester.tap(messageIcon);
+      await tester.pumpAndSettle();
+
+      // 4. Verify that the app has navigated to the SessionsScreen.
+      final sessionsScreenFinder = find.byType(SessionsScreen);
+      expect(sessionsScreenFinder, findsOneWidget);
+      expect(find.widgetWithText(AppBar, '메시지'), findsOneWidget); // Check AppBar title
+
+      // 5. Find and tap the first session entry ('Alice').
       await tester.tap(find.text('Alice'));
-      await tester.pumpAndSettle(); // Wait for navigation animation.
+      await tester.pumpAndSettle();
 
-      // 4. Verify that the app has navigated to the ChatScreen.
+      // 6. Verify that the app has navigated to the ChatScreen.
       final chatScreenFinder = find.byType(ChatScreen);
       expect(chatScreenFinder, findsOneWidget);
 
-      // 5. Verify the data on the chat screen is correct.
-      //    - Check for the correct AppBar title.
-      //    - Check for a message from the chat history.
+      // 7. Verify the data on the chat screen is correct.
       expect(
         find.descendant(
           of: chatScreenFinder,
