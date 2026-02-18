@@ -24,7 +24,7 @@ jobs:
         working-directory: backend
         run: |
           chmod +x ./gradlew
-          ./gradlew build -x test
+          ./gradlew bootJar -x test
 
       - name: Rename jar
         run: |
