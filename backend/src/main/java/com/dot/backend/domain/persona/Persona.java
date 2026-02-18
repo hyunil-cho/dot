@@ -1,6 +1,5 @@
 package com.dot.backend.domain.persona;
 
-import com.dot.backend.domain.persona.ConversationSample;
 import com.dot.backend.domain.common.BaseEntity;
 import com.dot.backend.domain.user.User;
 import jakarta.persistence.*;
@@ -50,21 +49,7 @@ public class Persona extends BaseEntity {
     private String profileImageUrl; // S3 URL
 
     @Column(columnDefinition = "TEXT")
-    private String memo; // AI 참조용 메모
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "learning_status", nullable = false, length = 20)
-    @Builder.Default
-    private LearningStatus learningStatus = LearningStatus.NOT_STARTED;
-
-    @Column(name = "last_training_job_id", length = 100)
-    private String lastTrainingJobId; // AI Engine에서 반환한 Job ID
-
-    @Column(name = "persona_model_id", length = 100) // Renamed field
-    private String personaModelId; // 학습 완료된 페르소나 모델 ID
-
-    @Column(name = "last_training_updated_at")
-    private LocalDateTime lastTrainingUpdatedAt; // 마지막 학습 상태 동기화 시간
+    private String memo; // AI 참조용 메모 (시스템 프롬프트 생성에 사용)
 
     @Column(name = "is_deleted", nullable = false)
     @Builder.Default
@@ -72,18 +57,18 @@ public class Persona extends BaseEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
-    
-    // New relationships
+
+    // Relationships
     @OneToMany(mappedBy = "persona", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default // Initialize with empty list
+    @Builder.Default
     private List<PersonaTrait> traits = new ArrayList<>();
 
     @OneToMany(mappedBy = "persona", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default // Initialize with empty list
+    @Builder.Default
     private List<ConversationSample> samples = new ArrayList<>();
 
 
-    // 비즈니스 로직 - existing methods, with modifications if needed
+    // 비즈니스 로직
 
     public void updateProfile(String name, String relationship, String memo) {
         if (name != null && !name.isBlank()) {
@@ -96,23 +81,6 @@ public class Persona extends BaseEntity {
     public void updateProfileImage(String imageUrl) {
         this.profileImageUrl = imageUrl;
     }
-
-    public void updateLearningStatus(LearningStatus status) {
-        this.learningStatus = status;
-        this.lastTrainingUpdatedAt = LocalDateTime.now();
-    }
-
-    public void updateLastTrainingJobId(String jobId) {
-        this.lastTrainingJobId = jobId;
-        this.lastTrainingUpdatedAt = LocalDateTime.now();
-    }
-    
-    public void completeTraining(String personaModelId) {
-        this.learningStatus = LearningStatus.COMPLETED;
-        this.personaModelId = personaModelId;
-        this.lastTrainingUpdatedAt = LocalDateTime.now();
-    }
-
 
     public void softDelete() {
         this.isDeleted = true;
@@ -127,19 +95,18 @@ public class Persona extends BaseEntity {
         this.deletedAt = null;
     }
 
-    public boolean canStartLearning() {
-        return !this.isDeleted &&
-               (this.learningStatus == LearningStatus.NOT_STARTED ||
-                this.learningStatus == LearningStatus.FAILED);
-    }
-
-    public boolean isLearningCompleted() {
-        return this.learningStatus == LearningStatus.COMPLETED;
-    }
-
     public boolean belongsTo(User user) {
         return this.user.getId().equals(user.getId());
     }
-}
 
+    /**
+     * Persona가 채팅 가능한 상태인지 확인
+     * - 삭제되지 않은 상태
+     * - 최소 1개 이상의 ConversationSample 또는 memo가 있는 경우
+     */
+    public boolean isReadyForChat() {
+        return !this.isDeleted &&
+               (!samples.isEmpty() || (memo != null && !memo.isBlank()));
+    }
+}
 

@@ -37,8 +37,6 @@ public interface PersonaRepository extends JpaRepository<Persona, Long> {
     // 전화번호 중복 확인
     boolean existsByUserIdAndPhoneNumberAndIsDeletedFalse(Long userId, String phoneNumber);
 
-    // AI Job ID로 Persona 조회 (Webhook 처리용)
-    Optional<Persona> findByLastTrainingJobId(String jobId);
 
     // 사용자의 모든 Persona 삭제 (회원 탈퇴용)
     @Modifying
