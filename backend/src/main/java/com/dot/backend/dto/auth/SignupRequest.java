@@ -17,14 +17,14 @@ import lombok.NoArgsConstructor;
 @Builder
 public class SignupRequest {
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email format")
+    @NotBlank(message = "이메일을 입력해주세요")
+    @Email(message = "올바른 이메일 형식이 아닙니다")
     private String email;
 
-    @NotBlank(message = "Password is required")
+    @NotBlank(message = "비밀번호를 입력해주세요")
     @Pattern(
         regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,}$",
-        message = "Password must be at least 8 characters with letters, numbers, and special characters"
+        message = "비밀번호는 최소 8자 이상이며, 영문, 숫자, 특수문자를 포함해야 합니다"
     )
     private String password;
 

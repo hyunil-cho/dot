@@ -11,6 +11,7 @@ CREATE TABLE personas (
     memo TEXT DEFAULT NULL COMMENT 'AI 참조용 메모',
     learning_status VARCHAR(20) NOT NULL DEFAULT 'NOT_STARTED' COMMENT '학습 상태',
     last_training_job_id VARCHAR(100) DEFAULT NULL COMMENT 'AI Engine Job ID',
+    persona_model_id VARCHAR(100) DEFAULT NULL COMMENT '학습 완료된 페르소나 모델 ID',
     last_training_updated_at DATETIME(6) DEFAULT NULL COMMENT '마지막 학습 상태 동기화 시간',
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Soft Delete 플래그',
     deleted_at DATETIME(6) DEFAULT NULL COMMENT '삭제 일시',

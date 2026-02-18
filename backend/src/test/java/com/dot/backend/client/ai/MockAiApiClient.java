@@ -51,7 +51,7 @@ public class MockAiApiClient implements AiApiClient {
         TrainingJobStatusResponse status = jobs.get(jobId);
 
         if (status == null) {
-            throw new IllegalArgumentException("Job not found: " + jobId);
+            throw new IllegalArgumentException("작업을 찾을 수 없습니다: " + jobId);
         }
 
         // Mock: 시간 경과에 따라 상태 자동 변경

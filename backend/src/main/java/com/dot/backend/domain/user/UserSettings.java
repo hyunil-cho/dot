@@ -30,7 +30,7 @@ public class UserSettings extends BaseEntity {
 
     public void updateCallTimeout(Integer seconds) {
         if (seconds < 30 || seconds > 3600) {
-            throw new IllegalArgumentException("Call timeout must be between 30 and 3600 seconds");
+            throw new IllegalArgumentException("채팅 타임아웃은 30초에서 3600초 사이여야 합니다");
         }
         this.callTimeoutSeconds = seconds;
     }

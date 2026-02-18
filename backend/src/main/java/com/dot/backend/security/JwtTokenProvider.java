@@ -106,10 +106,10 @@ public class JwtTokenProvider {
             return getUserIdFromToken(token);
         } catch (ExpiredJwtException e) {
             log.warn("Refresh token expired: {}", e.getMessage());
-            throw new JwtAuthenticationException("Refresh token expired");
-        } catch (JwtException e) {
+            throw new JwtAuthenticationException("리프레시 토큰이 만료되었습니다");
+        } catch (Exception e) {
             log.warn("Invalid refresh token: {}", e.getMessage());
-            throw new JwtAuthenticationException("Invalid refresh token");
+            throw new JwtAuthenticationException("유효하지 않은 리프레시 토큰입니다");
         }
     }
 

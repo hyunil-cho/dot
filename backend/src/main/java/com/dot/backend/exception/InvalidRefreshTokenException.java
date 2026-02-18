@@ -6,7 +6,7 @@ package com.dot.backend.exception;
 public class InvalidRefreshTokenException extends RuntimeException {
 
     public InvalidRefreshTokenException() {
-        super("Invalid or expired refresh token");
+        super("유효하지 않거나 만료된 리프레시 토큰입니다");
     }
 
     public InvalidRefreshTokenException(String message) {
