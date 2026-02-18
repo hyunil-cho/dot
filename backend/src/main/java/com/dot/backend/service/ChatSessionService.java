@@ -64,6 +64,13 @@ public class ChatSessionService {
         Persona persona = personaRepository.findByIdAndUserId(personaId, user.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Persona를 찾을 수 없습니다"));
 
+        // 2. 중복 세션 체크 (같은 유저 + 같은 페르소나로 ACTIVE 세션이 이미 있으면 막기)
+        boolean alreadyExists = chatSessionRepository
+                .existsByUserIdAndPersonaIdAndStatus(user.getId(), personaId, ChatSessionStatus.ACTIVE);
+
+        if (alreadyExists) {
+            throw new IllegalStateException("이미 활성화된 채팅 세션이 있습니다. 기존 세션을 종료 후 다시 시도해주세요.");
+        }
         // 2. ConversationSample 조회 (최근 50개)
         List<ConversationSample> samples = conversationSampleRepository
                 .findByPersonaIdOrderByCreatedAtDesc(persona.getId(), PageRequest.of(0, 50));

@@ -34,6 +34,9 @@ public interface ChatSessionRepository extends JpaRepository<ChatSession, Long> 
     // ID와 User로 조회 (권한 검증용)
     @Query("SELECT c FROM ChatSession c WHERE c.id = :id AND c.user.id = :userId")
     Optional<ChatSession> findByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
+
+    boolean existsByUserIdAndPersonaIdAndStatus(Long userId, Long personaId, ChatSessionStatus status);
+
 }
 
 
