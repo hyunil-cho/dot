@@ -158,6 +158,27 @@ public class ChatController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/{sessionId}")
+    @Operation(
+            summary = "채팅 세션 단건 조회",
+            description = "세션 ID로 특정 채팅 세션의 메타데이터를 조회합니다.\n\n" +
+                    "**인증 필요:** Bearer Token"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공",
+                    content = @Content(schema = @Schema(implementation = ChatSessionResponse.class))),
+            @ApiResponse(responseCode = "404", description = "세션 없음 또는 권한 없음")
+    })
+    public ResponseEntity<ChatSessionResponse> getSession(
+            @Parameter(description = "채팅 세션 ID", required = true, example = "1")
+            @PathVariable Long sessionId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        User currentUser = getCurrentUser(userDetails);
+        ChatSessionResponse response = chatSessionService.getSession(currentUser, sessionId);
+        return ResponseEntity.ok(response);
+    }
+
     /**
      * 메시지 전송 및 AI 응답 받기
      */

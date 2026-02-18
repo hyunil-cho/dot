@@ -50,6 +50,23 @@ public class ChatSessionService {
     }
 
     /**
+     * 채팅 세션 단건 조회
+     */
+    @Transactional(readOnly = true)
+    public ChatSessionResponse getSession(User user, Long sessionId) {
+        log.debug("Fetching chat session: {}, user: {}", sessionId, user.getEmail());
+
+        ChatSession session = chatSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("채팅 세션을 찾을 수 없습니다"));
+
+        if (!session.getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("접근 권한이 없습니다");
+        }
+
+        return toResponse(session);
+    }
+
+    /**
      * 채팅 세션 생성
      *
      * @param user 현재 사용자
