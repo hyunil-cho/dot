@@ -8,7 +8,7 @@ import org.springframework.web.client.RestTemplate;
  * HTTP 클라이언트 설정
  */
 @Configuration
-public class RestClientConfig {
+public class HttpClientConfig {
 
     @Bean
     public RestTemplate restTemplate() {

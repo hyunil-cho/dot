@@ -13,9 +13,6 @@ import java.util.List;
 @Entity
 @Table(
     name = "personas",
-    uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "phone_number"})
-    },
     indexes = {
         @Index(name = "idx_persona_user_deleted", columnList = "user_id, is_deleted")
     }
@@ -38,9 +35,8 @@ public class Persona extends BaseEntity {
     @Column(nullable = false, length = 500)
     private String name; // 암호화 저장
 
-    @NotBlank
-    @Column(name = "phone_number", nullable = false, length = 500)
-    private String phoneNumber; // 암호화 저장
+    @Column(name = "phone_number", length = 500)
+    private String phoneNumber; // 암호화 저장 (선택 사항)
 
     @Column(length = 100)
     private String relationship; // 예: 어머니, 아버지, 친구 등
@@ -70,12 +66,19 @@ public class Persona extends BaseEntity {
 
     // 비즈니스 로직
 
-    public void updateProfile(String name, String relationship, String memo) {
+    public void updateProfile(String name, String phoneNumber, String relationship, String memo) {
         if (name != null && !name.isBlank()) {
             this.name = name;
         }
-        this.relationship = relationship;
-        this.memo = memo;
+        if (phoneNumber != null) {
+            this.phoneNumber = phoneNumber;
+        }
+        if (relationship != null) {
+            this.relationship = relationship;
+        }
+        if (memo != null) {
+            this.memo = memo;
+        }
     }
 
     public void updateProfileImage(String imageUrl) {

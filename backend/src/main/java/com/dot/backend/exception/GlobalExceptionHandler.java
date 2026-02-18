@@ -89,6 +89,23 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * IllegalArgumentException - 잘못된 인자 (주로 리소스를 찾을 수 없을 때)
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
+        log.warn("IllegalArgumentException: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.NOT_FOUND.value())
+                .error("Resource Not Found")
+                .message(ex.getMessage())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
      * 유효하지 않은 Refresh Token 예외
      */
     @ExceptionHandler(InvalidRefreshTokenException.class)

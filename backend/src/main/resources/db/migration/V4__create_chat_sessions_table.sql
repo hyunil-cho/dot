@@ -3,9 +3,13 @@
 
 CREATE TABLE chat_sessions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    persona_id BIGINT NOT NULL,
+    persona_id BIGINT DEFAULT NULL,
     user_id BIGINT NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'INIT' COMMENT '채팅 상태: INIT, ACTIVE, ENDED',
+    s3_key VARCHAR(500) DEFAULT NULL,
+    original_file_name VARCHAR(255) DEFAULT NULL,
+    selected_speaker VARCHAR(100) DEFAULT NULL,
+    system_prompt TEXT DEFAULT NULL,
     started_at DATETIME(6) DEFAULT NULL COMMENT '채팅 시작 시간',
     ended_at DATETIME(6) DEFAULT NULL COMMENT '채팅 종료 시간',
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),

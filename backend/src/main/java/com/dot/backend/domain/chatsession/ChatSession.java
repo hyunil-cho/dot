@@ -39,18 +39,22 @@ public class ChatSession extends BaseEntity {
     @Builder.Default
     private ChatSessionStatus status = ChatSessionStatus.INIT;
 
+    @Column(name = "system_prompt", columnDefinition = "TEXT")
+    private String systemPrompt;  // 세션별 시스템 프롬프트 (캐싱)
+
     @Column(name = "started_at")
     private LocalDateTime startedAt;
 
     @Column(name = "ended_at")
     private LocalDateTime endedAt;
 
-    // 상태 전이 메서드 (State Machine Rules 준수)
+    // 상태 전이 메서드
 
-    public void start() {
+    public void start(String systemPrompt) {
         if (this.status != ChatSessionStatus.INIT) {
-            throw new IllegalStateException("Can only start from INIT state");
+            throw new IllegalStateException("INIT 상태에서만 시작할 수 있습니다");
         }
+        this.systemPrompt = systemPrompt;
         this.status = ChatSessionStatus.ACTIVE;
         this.startedAt = LocalDateTime.now();
     }

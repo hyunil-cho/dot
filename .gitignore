@@ -35,3 +35,8 @@ frontend/.packages
 
 # Logs
 *.log
+
+# ⚠️ SECURITY WARNING
+# backend/src/main/resources/application.yml contains AWS credentials for development
+# TODO: Remove before production deployment or make repository private
+

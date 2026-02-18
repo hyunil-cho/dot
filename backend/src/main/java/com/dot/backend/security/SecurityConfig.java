@@ -10,6 +10,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 /**
  * Spring Security 설정
@@ -24,6 +25,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -31,8 +33,8 @@ public class SecurityConfig {
             // CSRF 비활성화 (JWT 사용)
             .csrf(csrf -> csrf.disable())
 
-            // CORS 설정 (추후 프론트엔드 연동 시 설정)
-            .cors(cors -> cors.disable())
+            // CORS 설정 활성화 (Flutter Web 연동)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
 
             // Session 사용 안 함
             .sessionManagement(session ->
@@ -40,17 +42,23 @@ public class SecurityConfig {
             )
 
             // 인증 규칙
-            .authorizeHttpRequests(auth -> auth
-                // 인증 없이 접근 가능한 경로
-                .requestMatchers(
-                    "/api/auth/**",      // 회원가입, 로그인
-                    "/h2-console/**",    // H2 Console (개발용)
-                    "/error"             // 에러 페이지
-                ).permitAll()
+                .authorizeHttpRequests(auth -> auth
+                        // 인증 없이 접근 가능한 경로
+                        .requestMatchers(
+                                "/api/auth/**",      // 회원가입, 로그인
+                                "/h2-console/**",    // H2 Console (개발용)
+                                "/error",            // 에러 페이지
+                                "/swagger-ui/**",    // Swagger UI
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",   // OpenAPI JSON
+                                "/swagger-resources/**",
+                                "/webjars/**",
+                                "/uploads/**"       // 프로필 이미지 등 업로드된 파일 접근 허용
+                        ).permitAll()
 
-                // 그 외 모든 요청은 인증 필요
-                .anyRequest().authenticated()
-            )
+                        // 그 외 모든 요청은 인증 필요
+                        .anyRequest().authenticated()
+                )
 
             // H2 Console 사용을 위한 설정
             .headers(headers -> headers
