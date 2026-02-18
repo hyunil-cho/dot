@@ -87,8 +87,8 @@ encryption:
 
 # Gemini API 설정 (개발 환경)
 gemini:
-  api-key: AIzaSyBhc8pxMXtNsmoSdxPFvUn5ORR_CT5kiuA
-  model: gemini-1.5-flash
+  api-key: AIzaSyCypjk6MQGTDXTRU7tp2Wky8afYH8ve4No
+  model: gemini-2.0-flash
 
 # AWS S3 설정 (개발 환경)
 # TODO: 프로덕션 배포 전 환경변수로 변경 필요 (보안)
@@ -148,5 +148,5 @@ aws:
 
 # Gemini API 설정 (프로덕션)
 gemini:
-  api-key: ${GEMINI_API_KEY:AIzaSyBhc8pxMXtNsmoSdxPFvUn5ORR_CT5kiuA}
-  model: gemini-1.5-pro
+  api-key: AIzaSyCypjk6MQGTDXTRU7tp2Wky8afYH8ve4No
+  model: gemini-2.0-flash
