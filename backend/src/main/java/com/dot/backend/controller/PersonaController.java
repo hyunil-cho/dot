@@ -92,36 +92,36 @@ public class PersonaController {
     })
     public ResponseEntity<PersonaResponse> createPersona(
         @Parameter(description = "Persona 이름", required = true)
-        @RequestParam("name")
+        @RequestPart("name")
         @NotBlank(message = "이름을 입력해주세요")
         @Size(max = 100, message = "이름은 100자 이내로 입력해주세요")
         String name,
 
         @Parameter(description = "전화번호 (010-1234-5678 형식, 선택 사항)")
-        @RequestParam(value = "phoneNumber", required = false)
+        @RequestPart(value = "phoneNumber", required = false)
         @Pattern(regexp = "^01[016789]-\\d{3,4}-\\d{4}$", message = "올바른 전화번호 형식이 아닙니다")
         String phoneNumber,
 
         @Parameter(description = "관계 (예: 어머니)")
-        @RequestParam(value = "relationship", required = false)
+        @RequestPart(value = "relationship", required = false)
         @Size(max = 100, message = "관계는 100자 이내로 입력해주세요")
         String relationship,
 
         @Parameter(description = "메모 (AI 참조용)")
-        @RequestParam(value = "memo", required = false)
+        @RequestPart(value = "memo", required = false)
         @Size(max = 5000, message = "메모는 5000자 이내로 입력해주세요")
         String memo,
 
         @Parameter(description = "프로필 이미지 파일")
-        @RequestParam(value = "profileImage", required = false)
+        @RequestPart(value = "profileImage", required = false)
         MultipartFile profileImage,
 
         @Parameter(description = "카톡 대화 파일 (.txt)")
-        @RequestParam(value = "kakaoFile", required = false)
+        @RequestPart(value = "kakaoFile", required = false)
         MultipartFile kakaoFile,
 
         @Parameter(description = "화자 이름 (카톡 파일에서 Persona에 해당하는 이름)")
-        @RequestParam(value = "speakerName", required = false)
+        @RequestPart(value = "speakerName", required = false)
         String speakerName,
 
         @AuthenticationPrincipal UserDetails userDetails
@@ -289,27 +289,27 @@ public class PersonaController {
         @PathVariable Long id,
 
         @Parameter(description = "이름 (변경하지 않으려면 생략)")
-        @RequestParam(value = "name", required = false)
+        @RequestPart(value = "name", required = false)
         @Size(max = 100, message = "이름은 100자 이내로 입력해주세요")
         String name,
 
         @Parameter(description = "전화번호 (변경하지 않으려면 생략)")
-        @RequestParam(value = "phoneNumber", required = false)
+        @RequestPart(value = "phoneNumber", required = false)
         @Pattern(regexp = "^01[016789]-\\d{3,4}-\\d{4}$", message = "올바른 전화번호 형식이 아닙니다")
         String phoneNumber,
 
         @Parameter(description = "관계 (변경하지 않으려면 생략)")
-        @RequestParam(value = "relationship", required = false)
+        @RequestPart(value = "relationship", required = false)
         @Size(max = 100, message = "관계는 100자 이내로 입력해주세요")
         String relationship,
 
         @Parameter(description = "메모 (변경하지 않으려면 생략)")
-        @RequestParam(value = "memo", required = false)
+        @RequestPart(value = "memo", required = false)
         @Size(max = 5000, message = "메모는 5000자 이내로 입력해주세요")
         String memo,
 
         @Parameter(description = "프로필 이미지 파일 (변경하지 않으려면 생략)")
-        @RequestParam(value = "profileImage", required = false)
+        @RequestPart(value = "profileImage", required = false)
         MultipartFile profileImage,
 
         @AuthenticationPrincipal UserDetails userDetails
