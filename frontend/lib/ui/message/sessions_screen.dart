@@ -1,5 +1,7 @@
 import 'package:dot_frontend/model/chat_session.dart';
 import 'package:dot_frontend/provider/chat_provider.dart';
+import 'package:dot_frontend/ui/widgets/background_design.dart';
+import 'package:dot_frontend/ui/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -14,27 +16,19 @@ class SessionsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      extendBodyBehindAppBar: true,
+      appBar: const CustomAppBar(
+        title: Text('메시지'),
+      ),
+      body: Stack(
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(
-              '메시지',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Expanded(
+          const BackgroundDesign(),
+          SafeArea(
             child: Consumer<ChatProvider>(
               builder: (context, chatProvider, child) {
                 final sessions = chatProvider.sessions;
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
                   itemCount: sessions.length,
                   itemBuilder: (context, index) {
                     final session = sessions[index];

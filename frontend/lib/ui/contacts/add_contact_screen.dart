@@ -1,6 +1,7 @@
 import 'package:dot_frontend/model/contact.dart';
 import 'package:dot_frontend/provider/contacts_provider.dart';
 import 'package:dot_frontend/ui/widgets/background_design.dart';
+import 'package:dot_frontend/ui/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -54,14 +55,8 @@ class _AddContactScreenState extends State<AddContactScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const Text('새 연락처 추가', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+      appBar: const CustomAppBar(
+        title: Text('새 연락처 추가', style: TextStyle(color: Colors.white)),
       ),
       body: Stack(
         children: [

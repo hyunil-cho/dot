@@ -1,6 +1,8 @@
+import 'package:dot_frontend/ui/widgets/background_design.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dot_frontend/provider/settings_provider.dart';
+import 'package:dot_frontend/ui/widgets/custom_app_bar.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -8,80 +10,79 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent, // 배경은 MainScreen에서 처리하므로 투명
-      body: Consumer<SettingsProvider>(
-        builder: (context, settings, child) {
-          return ListView(
-            padding: const EdgeInsets.all(16.0),
-            children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16.0),
-                child: Text(
-                  '설정',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              
-              // 섹션 1: 일반 설정
-              _buildSectionHeader('일반'),
-              _buildListTile(
-                icon: Icons.timer,
-                title: '전화 연결 타임아웃',
-                subtitle: '${settings.callTimeout}초',
-                onTap: () => _showTimeoutDialog(context, settings),
-              ),
-              
-              // 알림 설정 (SwitchListTile 사용)
-              Container(
-                margin: const EdgeInsets.only(bottom: 8.0),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: SwitchListTile(
-                  secondary: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      shape: BoxShape.circle,
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
+      appBar: const CustomAppBar(
+        title: Text('설정'),
+      ),
+      body: Stack(
+        children: [
+          const BackgroundDesign(),
+          SafeArea(
+            child: Consumer<SettingsProvider>(
+              builder: (context, settings, child) {
+                return ListView(
+                  padding: const EdgeInsets.all(16.0),
+                  children: [
+                    // 섹션 1: 일반 설정
+                    _buildSectionHeader('일반'),
+                    _buildListTile(
+                      icon: Icons.timer,
+                      title: '전화 연결 타임아웃',
+                      subtitle: '${settings.callTimeout}초',
+                      onTap: () => _showTimeoutDialog(context, settings),
                     ),
-                    child: const Icon(Icons.notifications, color: Colors.white),
-                  ),
-                  title: const Text(
-                    '알림',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
+                    
+                    // 알림 설정 (SwitchListTile 사용)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 8.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: SwitchListTile(
+                        secondary: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.notifications, color: Colors.white),
+                        ),
+                        title: const Text(
+                          '알림',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        subtitle: Text(
+                          settings.notificationsEnabled ? '켜짐' : '꺼짐',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.6),
+                            fontSize: 12,
+                          ),
+                        ),
+                        value: settings.notificationsEnabled,
+                        onChanged: (bool value) {
+                          settings.toggleNotifications(value);
+                        },
+                        activeColor: const Color(0xFF6C63FF),
+                      ),
                     ),
-                  ),
-                  subtitle: Text(
-                    settings.notificationsEnabled ? '켜짐' : '꺼짐',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
-                      fontSize: 12,
-                    ),
-                  ),
-                  value: settings.notificationsEnabled,
-                  onChanged: (bool value) {
-                    settings.toggleNotifications(value);
-                  },
-                  activeColor: const Color(0xFF6C63FF),
-                ),
-              ),
-            ],
-          );
-        },
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
       child: Text(
         title,
         style: TextStyle(
