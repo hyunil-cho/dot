@@ -1,6 +1,7 @@
 package com.dot.backend.parser;
 
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -36,7 +37,14 @@ public class KakaoTxtParser {
     );
 
     /**
-     * TXT 파일을 파싱해서 메시지 목록 반환
+     * TXT 파일을 파싱해서 메시지 목록 반환 (MultipartFile 버전)
+     */
+    public List<ParsedMessage> parse(MultipartFile file) throws IOException {
+        return parse(file.getInputStream());
+    }
+
+    /**
+     * TXT 파일을 파싱해서 메시지 목록 반환 (InputStream 버전)
      */
     public List<ParsedMessage> parse(InputStream inputStream) throws IOException {
         List<ParsedMessage> messages = new ArrayList<>();

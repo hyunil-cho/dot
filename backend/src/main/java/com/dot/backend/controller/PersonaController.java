@@ -5,6 +5,7 @@ import com.dot.backend.domain.user.repository.UserRepository;
 import com.dot.backend.dto.persona.*;
 import com.dot.backend.service.PersonaService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -13,12 +14,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 import java.util.List;
@@ -43,66 +49,102 @@ public class PersonaController {
     private final UserRepository userRepository;
 
     /**
-     * Persona 생성
+     * Persona 생성 (Multipart Form)
      */
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
-        summary = "Persona 생성",
+        summary = "Persona 생성 (파일 업로드 포함)",
         description = "새로운 Persona를 연락처에 추가합니다.\n\n" +
-            "**주요 정보:**\n" +
-            "- 전화번호는 고유 식별자로 사용 (중복 불가)\n" +
-            "- 이름과 전화번호는 암호화되어 저장\n" +
-            "- memo 필드는 AI가 대화 생성 시 참조\n\n" +
-            "**전화번호 형식:**\n" +
-            "- 010-1234-5678 형식 사용\n" +
-            "- 하이픈(-) 필수\n\n" +
+            "**변경사항:**\n" +
+            "- Content-Type: multipart/form-data 사용\n" +
+            "- 프로필 이미지를 직접 업로드 (바이너리)\n" +
+            "- 카톡 대화 파일 업로드 및 화자 선택 한 번에 처리\n\n" +
+            "**필수 필드:**\n" +
+            "- name: Persona 이름\n" +
+            "- speakerName: 카톡 파일에서 Persona에 해당하는 화자 이름 (kakaoFile 있을 때 필수)\n\n" +
+            "**선택 필드:**\n" +
+            "- phoneNumber: 전화번호 (단순 추가 정보, 010-1234-5678 형식)\n" +
+            "- relationship: 관계 (예: 어머니)\n" +
+            "- memo: AI 참조용 메모\n" +
+            "- profileImage: 프로필 이미지 파일 (JPG, PNG 등)\n" +
+            "- kakaoFile: 카톡 대화 파일 (.txt)\n\n" +
             "**인증 필요:** Bearer Token"
     )
     @ApiResponses({
         @ApiResponse(
             responseCode = "201",
             description = "Persona 생성 성공",
-            content = @Content(
-                schema = @Schema(implementation = PersonaResponse.class),
-                examples = @ExampleObject(
-                    value = "{\n" +
-                        "  \"id\": 1,\n" +
-                        "  \"name\": \"엄마\",\n" +
-                        "  \"phoneNumber\": \"010-1234-5678\",\n" +
-                        "  \"relationship\": \"어머니\",\n" +
-                        "  \"profileImageUrl\": null,\n" +
-                        "  \"memo\": \"따뜻하고 다정한 말투\",\n" +
-                        "  \"createdAt\": \"2026-02-18T10:30:00\",\n" +
-                        "  \"updatedAt\": \"2026-02-18T10:30:00\"\n" +
-                        "}"
-                )
-            )
+            content = @Content(schema = @Schema(implementation = PersonaResponse.class))
         ),
         @ApiResponse(
             responseCode = "400",
-            description = "잘못된 요청 (전화번호 형식 오류, 중복된 전화번호)",
+            description = "잘못된 요청 (필수 필드 누락, 파일 형식 오류, 화자 이름 불일치)",
             content = @Content(
                 examples = @ExampleObject(
-                    value = "{\"message\": \"이미 등록된 전화번호입니다\"}"
+                    value = "{\"message\": \"화자 '엄마'를 찾을 수 없습니다\"}"
                 )
             )
         ),
         @ApiResponse(
             responseCode = "401",
-            description = "인증 실패",
-            content = @Content(
-                examples = @ExampleObject(
-                    value = "{\"message\": \"인증이 필요합니다\"}"
-                )
-            )
+            description = "인증 실패"
         )
     })
     public ResponseEntity<PersonaResponse> createPersona(
-        @Valid @RequestBody PersonaCreateRequest request,
+        @Parameter(description = "Persona 이름", required = true)
+        @RequestParam("name")
+        @NotBlank(message = "이름을 입력해주세요")
+        @Size(max = 100, message = "이름은 100자 이내로 입력해주세요")
+        String name,
+
+        @Parameter(description = "전화번호 (010-1234-5678 형식, 선택 사항)")
+        @RequestParam(value = "phoneNumber", required = false)
+        @Pattern(regexp = "^01[016789]-\\d{3,4}-\\d{4}$", message = "올바른 전화번호 형식이 아닙니다")
+        String phoneNumber,
+
+        @Parameter(description = "관계 (예: 어머니)")
+        @RequestParam(value = "relationship", required = false)
+        @Size(max = 100, message = "관계는 100자 이내로 입력해주세요")
+        String relationship,
+
+        @Parameter(description = "메모 (AI 참조용)")
+        @RequestParam(value = "memo", required = false)
+        @Size(max = 5000, message = "메모는 5000자 이내로 입력해주세요")
+        String memo,
+
+        @Parameter(description = "프로필 이미지 파일")
+        @RequestParam(value = "profileImage", required = false)
+        MultipartFile profileImage,
+
+        @Parameter(description = "카톡 대화 파일 (.txt)")
+        @RequestParam(value = "kakaoFile", required = false)
+        MultipartFile kakaoFile,
+
+        @Parameter(description = "화자 이름 (카톡 파일에서 Persona에 해당하는 이름)")
+        @RequestParam(value = "speakerName", required = false)
+        String speakerName,
+
         @AuthenticationPrincipal UserDetails userDetails
     ) {
         User currentUser = getCurrentUser(userDetails);
-        PersonaResponse response = personaService.createPersona(currentUser, request);
+
+        // 카톡 파일이 있는데 화자 이름이 없으면 에러
+        if (kakaoFile != null && !kakaoFile.isEmpty()) {
+            if (speakerName == null || speakerName.isBlank()) {
+                throw new IllegalArgumentException("카톡 파일 업로드 시 화자 이름(speakerName)은 필수입니다");
+            }
+        }
+
+        PersonaResponse response = personaService.createPersona(
+                currentUser,
+                name,
+                phoneNumber,
+                relationship,
+                memo,
+                profileImage,
+                kakaoFile,
+                speakerName
+        );
 
         return ResponseEntity
                 .created(URI.create("/api/personas/" + response.getId()))
@@ -206,21 +248,22 @@ public class PersonaController {
     }
 
     /**
-     * Persona 수정
+     * Persona 수정 (Multipart Form)
      */
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
         summary = "Persona 수정",
         description = "기존 Persona 정보를 수정합니다.\n\n" +
             "**수정 가능 항목:**\n" +
             "- 이름\n" +
+            "- 전화번호 (선택 사항)\n" +
             "- 관계\n" +
             "- 메모\n" +
-            "- 프로필 이미지 URL\n\n" +
+            "- 프로필 이미지 (파일 업로드)\n\n" +
             "**주의사항:**\n" +
-            "- 전화번호는 수정 불가 (식별자로 사용)\n" +
-            "- null 값은 수정하지 않음\n" +
-            "- 본인의 Persona만 수정 가능\n\n" +
+            "- null 값은 수정하지 않음 (기존 값 유지)\n" +
+            "- 본인의 Persona만 수정 가능\n" +
+            "- 프로필 이미지 변경 시 기존 이미지는 S3에서 삭제\n\n" +
             "**인증 필요:** Bearer Token"
     )
     @ApiResponses({
@@ -244,11 +287,37 @@ public class PersonaController {
     })
     public ResponseEntity<PersonaResponse> updatePersona(
         @PathVariable Long id,
-        @Valid @RequestBody PersonaUpdateRequest request,
+
+        @Parameter(description = "이름 (변경하지 않으려면 생략)")
+        @RequestParam(value = "name", required = false)
+        @Size(max = 100, message = "이름은 100자 이내로 입력해주세요")
+        String name,
+
+        @Parameter(description = "전화번호 (변경하지 않으려면 생략)")
+        @RequestParam(value = "phoneNumber", required = false)
+        @Pattern(regexp = "^01[016789]-\\d{3,4}-\\d{4}$", message = "올바른 전화번호 형식이 아닙니다")
+        String phoneNumber,
+
+        @Parameter(description = "관계 (변경하지 않으려면 생략)")
+        @RequestParam(value = "relationship", required = false)
+        @Size(max = 100, message = "관계는 100자 이내로 입력해주세요")
+        String relationship,
+
+        @Parameter(description = "메모 (변경하지 않으려면 생략)")
+        @RequestParam(value = "memo", required = false)
+        @Size(max = 5000, message = "메모는 5000자 이내로 입력해주세요")
+        String memo,
+
+        @Parameter(description = "프로필 이미지 파일 (변경하지 않으려면 생략)")
+        @RequestParam(value = "profileImage", required = false)
+        MultipartFile profileImage,
+
         @AuthenticationPrincipal UserDetails userDetails
     ) {
         User currentUser = getCurrentUser(userDetails);
-        PersonaResponse response = personaService.updatePersona(currentUser, id, request);
+        PersonaResponse response = personaService.updatePersona(
+                currentUser, id, name, phoneNumber, relationship, memo, profileImage
+        );
 
         return ResponseEntity.ok(response);
     }
