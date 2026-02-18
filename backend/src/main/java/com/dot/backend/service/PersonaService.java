@@ -10,12 +10,18 @@ import com.dot.backend.parser.ParsedMessage;
 import com.dot.backend.util.EncryptionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -31,6 +37,9 @@ public class PersonaService {
     private final EncryptionUtil encryptionUtil;
     private final S3Service s3Service;
     private final KakaoTxtParser kakaoTxtParser;
+
+    @Value("${file.upload-dir:uploads}")
+    private String uploadDir;
 
     /**
      * Persona 생성 (Multipart Form 방식)
@@ -71,8 +80,13 @@ public class PersonaService {
         String profileImageUrl = null;
         if (profileImage != null && !profileImage.isEmpty()) {
             try {
-                profileImageUrl = s3Service.uploadProfileImage(profileImage, user.getId());
-                log.info("Profile image uploaded: {}", profileImageUrl);
+                // [기존 S3 코드]
+                // profileImageUrl = s3Service.uploadProfileImage(profileImage, user.getId());
+                // log.info("Profile image uploaded: {}", profileImageUrl);
+
+                // [로컬 저장 코드]
+                profileImageUrl = saveFileLocally(profileImage, "profiles/" + user.getId());
+                log.info("Profile image saved locally: {}", profileImageUrl);
             } catch (IOException e) {
                 log.error("Failed to upload profile image", e);
                 throw new RuntimeException("프로필 이미지 업로드 실패", e);
@@ -214,14 +228,24 @@ public class PersonaService {
             try {
                 // 기존 이미지 삭제
                 if (persona.getProfileImageUrl() != null) {
-                    String oldKey = s3Service.extractKeyFromUrl(persona.getProfileImageUrl());
-                    s3Service.deleteFile(oldKey);
+                    // [기존 S3 코드]
+                    // String oldKey = s3Service.extractKeyFromUrl(persona.getProfileImageUrl());
+                    // s3Service.deleteFile(oldKey);
+
+                    // [로컬 삭제 코드]
+                    deleteLocalFile(persona.getProfileImageUrl());
                 }
 
                 // 새 이미지 업로드
-                String newImageUrl = s3Service.uploadProfileImage(profileImage, user.getId());
+                // [기존 S3 코드]
+                // String newImageUrl = s3Service.uploadProfileImage(profileImage, user.getId());
+                // persona.updateProfileImage(newImageUrl);
+                // log.info("Profile image updated: {}", newImageUrl);
+
+                // [로컬 저장 코드]
+                String newImageUrl = saveFileLocally(profileImage, "profiles/" + user.getId());
                 persona.updateProfileImage(newImageUrl);
-                log.info("Profile image updated: {}", newImageUrl);
+                log.info("Profile image updated locally: {}", newImageUrl);
             } catch (IOException e) {
                 log.error("Failed to upload profile image", e);
                 throw new RuntimeException("프로필 이미지 업로드 실패", e);
@@ -249,6 +273,47 @@ public class PersonaService {
     }
 
     // === Helper Methods ===
+
+    /**
+     * 파일을 로컬에 저장하고 접근 가능한 URL(경로) 반환
+     */
+    private String saveFileLocally(MultipartFile file, String subDir) throws IOException {
+        String originalFilename = file.getOriginalFilename();
+        String extension = originalFilename != null && originalFilename.contains(".")
+                ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                : "";
+        String fileName = UUID.randomUUID().toString() + extension;
+
+        Path uploadPath = Paths.get(uploadDir, subDir);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        Path filePath = uploadPath.resolve(fileName);
+        Files.copy(file.getInputStream(), filePath);
+
+        // 프론트엔드에서 접근할 수 있는 경로 반환 (예: /uploads/profiles/1/uuid.jpg)
+        return "/" + uploadDir + "/" + subDir + "/" + fileName;
+    }
+
+    /**
+     * 로컬 파일 삭제
+     */
+    private void deleteLocalFile(String fileUrl) {
+        if (fileUrl == null || !fileUrl.startsWith("/" + uploadDir)) {
+            return;
+        }
+
+        try {
+            // URL 경로에서 실제 파일 경로로 변환 (/uploads/... -> uploads/...)
+            String relativePath = fileUrl.substring(1);
+            Path filePath = Paths.get(relativePath);
+            Files.deleteIfExists(filePath);
+            log.info("Local file deleted: {}", filePath);
+        } catch (IOException e) {
+            log.error("Failed to delete local file: {}", fileUrl, e);
+        }
+    }
 
     /**
      * Persona -> PersonaResponse 변환

@@ -2,6 +2,9 @@ spring:
   application:
     name: dot-backend
 
+  file:
+    upload-dir: uploads
+
   profiles:
     active: dev
 

@@ -52,7 +52,8 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",   // OpenAPI JSON
                                 "/swagger-resources/**",
-                                "/webjars/**"
+                                "/webjars/**",
+                                "/uploads/**"       // 프로필 이미지 등 업로드된 파일 접근 허용
                         ).permitAll()
 
                         // 그 외 모든 요청은 인증 필요
