@@ -87,7 +87,7 @@ encryption:
 
 # Gemini API 설정 (개발 환경)
 gemini:
-  api-key: AIzaSyCypjk6MQGTDXTRU7tp2Wky8afYH8ve4No
+  api-key: ${GEMINI_API_KEY:dev-gemini-api-key}  # 개발용 기본값
   model: gemini-2.0-flash
 
 # AWS S3 설정 (개발 환경)
@@ -148,5 +148,5 @@ aws:
 
 # Gemini API 설정 (프로덕션)
 gemini:
-  api-key: AIzaSyCypjk6MQGTDXTRU7tp2Wky8afYH8ve4No
+  api-key: ${GEMINI_API_KEY:}
   model: gemini-2.0-flash

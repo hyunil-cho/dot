@@ -47,6 +47,9 @@ public class Persona extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String memo; // AI 참조용 메모 (시스템 프롬프트 생성에 사용)
 
+    @Column(columnDefinition = "TEXT")
+    private String trait; // Gemini가 분석하여 생성한 페르소나 지침서
+
     @Column(name = "is_deleted", nullable = false)
     @Builder.Default
     private Boolean isDeleted = false;
@@ -85,6 +88,10 @@ public class Persona extends BaseEntity {
         this.profileImageUrl = imageUrl;
     }
 
+    public void updateTrait(String trait) {
+        this.trait = trait;
+    }
+
     public void softDelete() {
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
@@ -105,11 +112,10 @@ public class Persona extends BaseEntity {
     /**
      * Persona가 채팅 가능한 상태인지 확인
      * - 삭제되지 않은 상태
-     * - 최소 1개 이상의 ConversationSample 또는 memo가 있는 경우
+     * - trait(지침서)가 생성되어 있는 경우
      */
     public boolean isReadyForChat() {
-        return !this.isDeleted &&
-               (!samples.isEmpty() || (memo != null && !memo.isBlank()));
+        return !this.isDeleted && trait != null && !trait.isBlank();
     }
 }
 
