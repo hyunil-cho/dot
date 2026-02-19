@@ -1,6 +1,4 @@
 import 'package:dot_frontend/provider/auth_provider.dart';
-import 'package:dot_frontend/provider/chat_provider.dart';
-import 'package:dot_frontend/provider/contacts_provider.dart';
 import 'package:dot_frontend/ui/auth/login_screen.dart';
 import 'package:dot_frontend/ui/auth/signup_screen.dart';
 import 'package:dot_frontend/ui/contacts/add_contact_screen.dart';
@@ -39,28 +37,12 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
         return const HomeScreen();
       }
 
-      // 5. 각 경로에 맞는 위젯 반환 (동적 경로 우선 처리)
-      final contactsProvider =
-          Provider.of<ContactsProvider>(context, listen: false);
-      final chatProvider =
-          Provider.of<ChatProvider>(context, listen: false);
-
-      // /chat/:contactId
+      // 5. 동적 경로 처리 (위젯에게 파싱 위임)
+      
+      // /chat/:sessionId
       if (uri.pathSegments.length == 2 && uri.pathSegments.first == 'chat') {
-        final contactId = uri.pathSegments[1];
-        final contact = contactsProvider.getContactById(contactId);
-        
-        if (contact != null) {
-          // getOrCreateSession might notifyListeners, which is usually not allowed during build.
-          // However, in this router setup, it's called within a MaterialPageRoute builder.
-          // If it causes issues, we might need a different approach.
-          chatProvider.getOrCreateSession(contact);
-          final session = chatProvider.getSessionByContactId(contactId);
-          if (session != null) {
-            return ChatScreen(session: session);
-          }
-        }
-        return const HomeScreen(); // Or 404
+        final sessionId = uri.pathSegments[1];
+        return ChatScreen.fromRoute(settings, sessionId);
       }
 
       // /contact/:id/edit
@@ -68,20 +50,14 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
           uri.pathSegments.first == 'contact' &&
           uri.pathSegments.last == 'edit') {
         final id = uri.pathSegments[1];
-        final contact = contactsProvider.getContactById(id);
-        return contact != null
-            ? EditContactScreen(contact: contact)
-            : const HomeScreen(); // 혹은 404 페이지
+        return EditContactScreen.fromRoute(settings, id);
       }
 
       // /contact/:id
       if (uri.pathSegments.length == 2 &&
           uri.pathSegments.first == 'contact') {
         final id = uri.pathSegments[1];
-        final contact = contactsProvider.getContactById(id);
-        return contact != null
-            ? ContactDetailScreen(contact: contact)
-            : const HomeScreen(); // 혹은 404 페이지
+        return ContactDetailScreen.fromRoute(settings, id);
       }
 
       // 정적 경로 처리

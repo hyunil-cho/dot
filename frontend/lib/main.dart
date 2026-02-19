@@ -1,10 +1,10 @@
-import 'package:dot_frontend/provider/chat_provider.dart';
 import 'package:dot_frontend/router.dart';
+import 'package:dot_frontend/service/chat_service.dart';
+import 'package:dot_frontend/service/contact_service.dart';
+import 'package:dot_frontend/service/settings_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dot_frontend/provider/auth_provider.dart';
-import 'package:dot_frontend/provider/settings_provider.dart';
-import 'package:dot_frontend/provider/contacts_provider.dart'; // ContactsProvider import
 
 import 'package:dot_frontend/config/url_strategy_noop.dart'
     if (dart.library.html) 'package:dot_frontend/config/url_strategy_web.dart';
@@ -16,9 +16,9 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => SettingsProvider()),
-        ChangeNotifierProvider(create: (_) => ContactsProvider()),
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        Provider(create: (_) => SettingsService()), // SettingsService 직접 주입
+        Provider(create: (_) => ContactService()),
+        Provider(create: (_) => ChatService()),
       ],
       child: const DotApp(),
     ),
@@ -45,4 +45,3 @@ class DotApp extends StatelessWidget {
     );
   }
 }
-

@@ -1,6 +1,5 @@
 import 'package:dot_frontend/model/contact.dart';
 import 'package:dot_frontend/provider/auth_provider.dart';
-import 'package:dot_frontend/provider/contacts_provider.dart';
 import 'package:dot_frontend/service/contact_service.dart';
 import 'package:dot_frontend/ui/widgets/background_design.dart';
 import 'package:dot_frontend/ui/widgets/custom_app_bar.dart';
@@ -19,7 +18,6 @@ class AddContactScreen extends StatefulWidget {
 
 class _AddContactScreenState extends State<AddContactScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _contactService = ContactService();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _relationshipController = TextEditingController();
@@ -45,6 +43,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
 
       try {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        final contactService = Provider.of<ContactService>(context, listen: false);
         final token = authProvider.accessToken;
 
         if (token == null) {
@@ -63,7 +62,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
           fileName = personaData.file.name;
         }
 
-        final newContact = await _contactService.createContact(
+        await contactService.createContact(
           token: token,
           name: _nameController.text,
           phoneNumber: _phoneController.text,
@@ -75,9 +74,6 @@ class _AddContactScreenState extends State<AddContactScreen> {
         );
 
         if (mounted) {
-          Provider.of<ContactsProvider>(context, listen: false)
-              .addContact(newContact);
-
           Navigator.of(context).pop();
 
           ScaffoldMessenger.of(context).showSnackBar(

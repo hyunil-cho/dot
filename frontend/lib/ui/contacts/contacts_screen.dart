@@ -1,6 +1,6 @@
-import 'package:dot_frontend/provider/auth_provider.dart';
-import 'package:dot_frontend/provider/contacts_provider.dart';
 import 'package:dot_frontend/model/contact.dart';
+import 'package:dot_frontend/provider/auth_provider.dart';
+import 'package:dot_frontend/service/contact_service.dart';
 import 'package:dot_frontend/ui/widgets/background_design.dart';
 import 'package:dot_frontend/ui/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
@@ -14,16 +14,70 @@ class ContactsScreen extends StatefulWidget {
 }
 
 class _ContactsScreenState extends State<ContactsScreen> {
+  List<Contact> _contacts = [];
+  List<Contact> _filteredContacts = [];
+  bool _isLoading = false;
+  String? _errorMessage;
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      if (authProvider.accessToken != null) {
-        Provider.of<ContactsProvider>(context, listen: false)
-            .fetchContacts(authProvider.accessToken!);
-      }
+    _fetchContacts();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchContacts() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
     });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final contactService = Provider.of<ContactService>(context, listen: false);
+      
+      if (authProvider.accessToken != null) {
+        final contacts = await contactService.getContacts(authProvider.accessToken!);
+        if (mounted) {
+          setState(() {
+            _contacts = contacts;
+            _filterContacts(_searchController.text);
+            _isLoading = false;
+          });
+        }
+      } else {
+        throw Exception('로그인이 필요합니다.');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = '연락처를 불러오는 데 실패했습니다: $e';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _filterContacts(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        _filteredContacts = _contacts;
+      });
+    } else {
+      setState(() {
+        _filteredContacts = _contacts.where((contact) {
+          final nameLower = contact.name.toLowerCase();
+          final queryLower = query.toLowerCase();
+          return nameLower.contains(queryLower) || contact.phoneNumber.contains(query);
+        }).toList();
+      });
+    }
   }
 
   @override
@@ -35,8 +89,10 @@ class _ContactsScreenState extends State<ContactsScreen> {
         title: Text('연락처'),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/add_contact');
+        onPressed: () async {
+          // 연락처 추가 후 돌아왔을 때 목록 갱신
+          await Navigator.pushNamed(context, '/add_contact');
+          _fetchContacts();
         },
         backgroundColor: const Color(0xFF6C63FF),
         child: const Icon(Icons.add, color: Colors.white),
@@ -51,11 +107,9 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                   child: TextField(
+                    controller: _searchController,
                     style: const TextStyle(color: Colors.white),
-                    onChanged: (value) {
-                      Provider.of<ContactsProvider>(context, listen: false)
-                          .setSearchQuery(value);
-                    },
+                    onChanged: _filterContacts,
                     decoration: InputDecoration(
                       hintText: '검색',
                       hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
@@ -75,59 +129,41 @@ class _ContactsScreenState extends State<ContactsScreen> {
 
                 // 연락처 목록
                 Expanded(
-                  child: Consumer<ContactsProvider>(
-                    builder: (context, contactsProvider, child) {
-                      if (contactsProvider.isLoading) {
-                        return const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
-                        );
-                      }
-
-                      if (contactsProvider.errorMessage != null) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                contactsProvider.errorMessage!,
-                                style: const TextStyle(color: Colors.white),
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                      : _errorMessage != null
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    _errorMessage!,
+                                    style: const TextStyle(color: Colors.white),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton(
+                                    onPressed: _fetchContacts,
+                                    child: const Text('다시 시도'),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: () {
-                                  final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                                  if (authProvider.accessToken != null) {
-                                    contactsProvider.fetchContacts(authProvider.accessToken!);
-                                  }
-                                },
-                                child: const Text('다시 시도'),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      final contacts = contactsProvider.filteredContacts;
-
-                      if (contacts.isEmpty) {
-                        return Center(
-                          child: Text(
-                            '연락처가 없습니다.',
-                            style: TextStyle(color: Colors.white.withOpacity(0.5)),
-                          ),
-                        );
-                      }
-
-                      return ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: contacts.length,
-                        itemBuilder: (context, index) {
-                          final contact = contacts[index];
-                          return _buildContactTile(context, contact);
-                        },
-                      );
-                    },
-                  ),
+                            )
+                          : _filteredContacts.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    '연락처가 없습니다.',
+                                    style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  itemCount: _filteredContacts.length,
+                                  itemBuilder: (context, index) {
+                                    final contact = _filteredContacts[index];
+                                    return _buildContactTile(context, contact);
+                                  },
+                                ),
                 ),
               ],
             ),
@@ -170,8 +206,15 @@ class _ContactsScreenState extends State<ContactsScreen> {
         ),
         trailing:
             Icon(Icons.message, color: Colors.greenAccent.withOpacity(0.8)),
-        onTap: () {
-          Navigator.pushNamed(context, '/contact/${contact.id}');
+        onTap: () async {
+          // 상세 화면으로 이동 시 contact 객체 전달
+          // 상세 화면에서 돌아올 때 변경 사항이 있을 수 있으므로 목록 갱신
+          await Navigator.pushNamed(
+            context, 
+            '/contact/${contact.id}',
+            arguments: contact,
+          );
+          _fetchContacts();
         },
       ),
     );

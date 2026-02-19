@@ -1,11 +1,79 @@
+import 'package:dot_frontend/provider/auth_provider.dart';
+import 'package:dot_frontend/service/settings_service.dart';
 import 'package:dot_frontend/ui/widgets/background_design.dart';
+import 'package:dot_frontend/ui/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:dot_frontend/provider/settings_provider.dart';
-import 'package:dot_frontend/ui/widgets/custom_app_bar.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  int _callTimeout = 30;
+  bool _notificationsEnabled = true;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSettings();
+  }
+
+  Future<void> _fetchSettings() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final settingsService = Provider.of<SettingsService>(context, listen: false);
+      final token = authProvider.accessToken;
+
+      if (token != null) {
+        final settings = await settingsService.getSettings(token);
+        if (mounted) {
+          setState(() {
+            _callTimeout = settings['callTimeout'] ?? 30;
+            _notificationsEnabled = settings['notificationsEnabled'] ?? true;
+          });
+        }
+      }
+    } catch (e) {
+      // Handle error or use defaults
+      print('Error fetching settings: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _updateSettings() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final settingsService = Provider.of<SettingsService>(context, listen: false);
+      final token = authProvider.accessToken;
+
+      if (token != null) {
+        await settingsService.updateSettings(token, {
+          'callTimeout': _callTimeout,
+          'notificationsEnabled': _notificationsEnabled,
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('설정 저장 실패: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,61 +87,62 @@ class SettingsScreen extends StatelessWidget {
         children: [
           const BackgroundDesign(),
           SafeArea(
-            child: Consumer<SettingsProvider>(
-              builder: (context, settings, child) {
-                return ListView(
-                  padding: const EdgeInsets.all(16.0),
-                  children: [
-                    // 섹션 1: 일반 설정
-                    _buildSectionHeader('일반'),
-                    _buildListTile(
-                      icon: Icons.timer,
-                      title: '전화 연결 타임아웃',
-                      subtitle: '${settings.callTimeout}초',
-                      onTap: () => _showTimeoutDialog(context, settings),
-                    ),
-                    
-                    // 알림 설정 (SwitchListTile 사용)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 8.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                : ListView(
+                    padding: const EdgeInsets.all(16.0),
+                    children: [
+                      // 섹션 1: 일반 설정
+                      _buildSectionHeader('일반'),
+                      _buildListTile(
+                        icon: Icons.timer,
+                        title: '전화 연결 타임아웃',
+                        subtitle: '$_callTimeout초',
+                        onTap: () => _showTimeoutDialog(context),
                       ),
-                      child: SwitchListTile(
-                        secondary: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.notifications, color: Colors.white),
+                      
+                      // 알림 설정 (SwitchListTile 사용)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 8.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        title: const Text(
-                          '알림',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
+                        child: SwitchListTile(
+                          secondary: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.notifications, color: Colors.white),
                           ),
-                        ),
-                        subtitle: Text(
-                          settings.notificationsEnabled ? '켜짐' : '꺼짐',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
-                            fontSize: 12,
+                          title: const Text(
+                            '알림',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
+                          subtitle: Text(
+                            _notificationsEnabled ? '켜짐' : '꺼짐',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                              fontSize: 12,
+                            ),
+                          ),
+                          value: _notificationsEnabled,
+                          onChanged: (bool value) {
+                            setState(() {
+                              _notificationsEnabled = value;
+                            });
+                            _updateSettings();
+                          },
+                          activeColor: const Color(0xFF6C63FF),
                         ),
-                        value: settings.notificationsEnabled,
-                        onChanged: (bool value) {
-                          settings.toggleNotifications(value);
-                        },
-                        activeColor: const Color(0xFF6C63FF),
                       ),
-                    ),
-                  ],
-                );
-              },
-            ),
+                    ],
+                  ),
           ),
         ],
       ),
@@ -138,9 +207,9 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _showTimeoutDialog(BuildContext context, SettingsProvider settings) {
+  void _showTimeoutDialog(BuildContext context) {
     final TextEditingController controller = TextEditingController(
-      text: settings.callTimeout.toString(),
+      text: _callTimeout.toString(),
     );
 
     showDialog(
@@ -183,7 +252,10 @@ class SettingsScreen extends StatelessWidget {
               onPressed: () {
                 final int? newValue = int.tryParse(controller.text);
                 if (newValue != null && newValue > 0) {
-                  settings.setCallTimeout(newValue);
+                  setState(() {
+                    _callTimeout = newValue;
+                  });
+                  _updateSettings();
                   Navigator.pop(context);
                 } else {
                   // 유효하지 않은 입력 처리

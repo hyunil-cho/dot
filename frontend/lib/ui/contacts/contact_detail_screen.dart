@@ -1,24 +1,84 @@
 import 'package:dot_frontend/provider/auth_provider.dart';
-import 'package:dot_frontend/provider/contacts_provider.dart';
-import 'package:dot_frontend/ui/contacts/edit_contact_screen.dart';
+import 'package:dot_frontend/service/contact_service.dart';
 import 'package:flutter/material.dart';
 import 'package:dot_frontend/model/contact.dart';
 import 'package:dot_frontend/ui/widgets/background_design.dart';
 import 'package:dot_frontend/ui/widgets/action_button.dart';
 import 'package:provider/provider.dart';
 
-class ContactDetailScreen extends StatelessWidget {
-  final Contact contact;
+class ContactDetailScreen extends StatefulWidget {
+  final Contact? contact;
+  final String? contactId;
 
-  const ContactDetailScreen({super.key, required this.contact});
+  const ContactDetailScreen({super.key, this.contact, this.contactId});
 
-  Future<void> _handleDelete(BuildContext context) async {
+  // 라우터에서 호출하기 위한 팩토리 메서드
+  static Widget fromRoute(RouteSettings settings, String contactId) {
+    if (settings.arguments is Contact) {
+      return ContactDetailScreen(contact: settings.arguments as Contact);
+    }
+    return ContactDetailScreen(contactId: contactId);
+  }
+
+  @override
+  State<ContactDetailScreen> createState() => _ContactDetailScreenState();
+}
+
+class _ContactDetailScreenState extends State<ContactDetailScreen> {
+  Contact? _contact;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _contact = widget.contact;
+    if (_contact == null && widget.contactId != null) {
+      _fetchContact();
+    }
+  }
+
+  Future<void> _fetchContact() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final contactService = Provider.of<ContactService>(context, listen: false);
+      final token = authProvider.accessToken;
+
+      if (token != null) {
+        final contact = await contactService.getContact(token, widget.contactId!);
+        if (mounted) {
+          setState(() {
+            _contact = contact;
+            _isLoading = false;
+          });
+        }
+      } else {
+        throw Exception('로그인이 필요합니다.');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = '연락처 정보를 불러오는 데 실패했습니다: $e';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleDelete() async {
+    if (_contact == null) return;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF4A148C),
         title: const Text('연락처 삭제', style: TextStyle(color: Colors.white)),
-        content: Text('${contact.name} 연락처를 삭제하시겠습니까?',
+        content: Text('${_contact!.name} 연락처를 삭제하시겠습니까?',
             style: const TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
@@ -33,25 +93,25 @@ class ContactDetailScreen extends StatelessWidget {
       ),
     );
 
-    if (confirmed == true && context.mounted) {
+    if (confirmed == true && mounted) {
       try {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        final contactsProvider =
-            Provider.of<ContactsProvider>(context, listen: false);
+        final contactService =
+            Provider.of<ContactService>(context, listen: false);
 
         final token = authProvider.accessToken;
         if (token == null) throw Exception('인증 토큰이 없습니다.');
 
-        await contactsProvider.deleteContact(token, contact.id);
+        await contactService.deleteContact(token, _contact!.id);
 
-        if (context.mounted) {
+        if (mounted) {
           Navigator.pop(context); // 연락처 목록으로 돌아가기
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('연락처가 삭제되었습니다.')),
           );
         }
       } catch (e) {
-        if (context.mounted) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('삭제 실패: $e'),
@@ -65,6 +125,51 @@ class ContactDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Stack(
+          children: [
+            BackgroundDesign(),
+            Center(child: CircularProgressIndicator(color: Colors.white)),
+          ],
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Scaffold(
+        body: Stack(
+          children: [
+            const BackgroundDesign(),
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(_errorMessage!, style: const TextStyle(color: Colors.white)),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _fetchContact,
+                    child: const Text('다시 시도'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_contact == null) {
+      return const Scaffold(
+        body: Stack(
+          children: [
+            BackgroundDesign(),
+            Center(child: Text('연락처를 찾을 수 없습니다.', style: TextStyle(color: Colors.white))),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       body: Stack(
         children: [
@@ -97,7 +202,7 @@ class ContactDetailScreen extends StatelessWidget {
                   backgroundColor: const Color(0xFF6C63FF),
                   foregroundColor: Colors.white,
                   child: Text(
-                    contact.initial,
+                    _contact!.initial,
                     style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -106,7 +211,7 @@ class ContactDetailScreen extends StatelessWidget {
 
                 // 이름
                 Text(
-                  contact.name,
+                  _contact!.name,
                   style: const TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -118,7 +223,7 @@ class ContactDetailScreen extends StatelessWidget {
 
                 // 전화번호
                 Text(
-                  contact.phoneNumber,
+                  _contact!.phoneNumber,
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.white.withOpacity(0.7),
@@ -146,9 +251,9 @@ class ContactDetailScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildDetailItem(Icons.people, 'Relationship', contact.relationship),
+                                _buildDetailItem(Icons.people, 'Relationship', _contact!.relationship),
                                 const SizedBox(height: 24),
-                                _buildDetailItem(Icons.note, 'Memo', contact.memo.isNotEmpty ? contact.memo : 'No memo'),
+                                _buildDetailItem(Icons.note, 'Memo', _contact!.memo.isNotEmpty ? _contact!.memo : 'No memo'),
                               ],
                             ),
                           ),
@@ -164,23 +269,28 @@ class ContactDetailScreen extends StatelessWidget {
                                 color: Colors.blueAccent,
                                 onTap: () {
                                   Navigator.pushNamed(
-                                      context, '/chat/${contact.id}');
+                                      context, '/chat/${_contact!.id}');
                                 },
                               ),
                               ActionButton(
                                 icon: Icons.edit,
                                 label: 'Edit',
                                 color: Colors.orangeAccent,
-                                onTap: () {
-                                  Navigator.pushNamed(
-                                      context, '/contact/${contact.id}/edit');
+                                onTap: () async {
+                                  await Navigator.pushNamed(
+                                      context, '/contact/${_contact!.id}/edit',
+                                      arguments: _contact);
+                                  // 수정 후 돌아왔을 때 데이터 갱신
+                                  if (widget.contactId != null) {
+                                    _fetchContact();
+                                  }
                                 },
                               ),
                               ActionButton(
                                 icon: Icons.delete,
                                 label: 'Delete',
                                 color: Colors.redAccent,
-                                onTap: () => _handleDelete(context),
+                                onTap: _handleDelete,
                               ),
                             ],
                           ),
