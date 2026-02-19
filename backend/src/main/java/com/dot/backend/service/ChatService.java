@@ -63,18 +63,17 @@ public class ChatService {
         chatMessageRepository.save(userMessage);
         log.info("User message saved: {}", userMessage.getId());
 
-        // 3. 이전 대화 이력 조회 (최근 10개)
-        List<ChatMessage> recentMessages = chatMessageRepository
-                .findByUserIdAndPersonaIdOrderByCreatedAtAsc(user.getId(), session.getPersona().getId())
-                .stream()
-                .skip(Math.max(0, chatMessageRepository
-                        .findByUserIdAndPersonaIdOrderByCreatedAtAsc(user.getId(), session.getPersona().getId())
-                        .size() - 11)) // 최근 10개 (방금 저장한 사용자 메시지 제외하고 9개 + 새 메시지 1개)
-                .collect(Collectors.toList());
+        // 3. 이전 대화 이력 조회 (최근 10개, 방금 저장한 메시지 포함)
+        List<ChatMessage> allMessages = chatMessageRepository
+                .findByUserIdAndPersonaIdOrderByCreatedAtAsc(user.getId(), session.getPersona().getId());
+        
+        // 최근 11개 가져옴 (현재 메시지 포함해서 최대 10개의 '이전' 대화를 API에 전달하기 위함)
+        int startIdx = Math.max(0, allMessages.size() - 11);
+        List<ChatMessage> recentMessages = allMessages.subList(startIdx, allMessages.size());
 
-        // 4. Gemini API 호출용 대화 이력 변환 (사용자 메시지 제외)
+        // 4. Gemini API 호출용 대화 이력 변환 (현재 메시지인 userMessage는 제외하고 전달)
         List<GeminiApiClient.ChatMessage> conversationHistory = recentMessages.stream()
-                .filter(msg -> msg.getId() < userMessage.getId()) // 방금 저장한 메시지 제외
+                .filter(msg -> !msg.getId().equals(userMessage.getId())) 
                 .map(msg -> new GeminiApiClient.ChatMessage(
                         msg.getContent(),
                         msg.getRole() == ChatMessage.Role.USER
@@ -84,8 +83,11 @@ public class ChatService {
         // 5. Gemini API 호출
         String aiResponse;
         try {
+            // 시스템 프롬프트가 없으면 기본값 설정
+            String systemPrompt = session.getSystemPrompt() != null ? session.getSystemPrompt() : "당신은 친절한 AI 어시스턴트입니다.";
+            
             aiResponse = geminiApiClient.generateResponse(
-                    session.getSystemPrompt(),
+                    systemPrompt,
                     conversationHistory,
                     request.getContent()
             );

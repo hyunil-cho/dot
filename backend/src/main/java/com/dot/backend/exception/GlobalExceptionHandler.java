@@ -106,6 +106,23 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * IllegalStateException - 잘못된 상태 (중복 세션 등)
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex) {
+        log.warn("IllegalStateException: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error("Conflict")
+                .message(ex.getMessage())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    /**
      * 유효하지 않은 Refresh Token 예외
      */
     @ExceptionHandler(InvalidRefreshTokenException.class)

@@ -23,6 +23,9 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true, length = 500)
     private String email; // 암호화 저장
 
+    @Column(length = 500)
+    private String name; // 암호화 저장
+
     @NotBlank
     @Column(nullable = false, length = 500)
     private String password; // BCrypt 해싱

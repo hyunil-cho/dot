@@ -37,6 +37,7 @@ public class AuthService {
     private final PersonaRepository personaRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final com.dot.backend.util.EncryptionUtil encryptionUtil;
 
     /**
      * 회원가입
@@ -51,6 +52,7 @@ public class AuthService {
         // 사용자 생성
         User user = User.builder()
                 .email(request.getEmail())
+                .name(request.getName() != null ? encryptionUtil.encrypt(request.getName()) : null)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .build();
 

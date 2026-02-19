@@ -43,7 +43,41 @@ Dot 프로젝트 백엔드 개발 문서 모음
 
 ---
 
-### 3. [REPOSITORY_REFACTORING.md](./REPOSITORY_REFACTORING.md)
+### 3. [SWAGGER_GUIDE.md](./SWAGGER_GUIDE.md) ⭐ NEW
+**Swagger API 사용 가이드**
+
+- Swagger UI 접속 방법
+- 전체 API 엔드포인트 상세 설명
+- 인증 방법 가이드 (Bearer Token)
+- DTO 스키마 테이블
+- 테스트 시나리오 (curl 예시)
+- Flutter 통합 예시 코드
+
+**Swagger UI 접속:**
+```
+http://localhost:8080/swagger-ui/index.html
+```
+
+---
+
+### 4. [AUTH_SWAGGER_DOCUMENTATION.md](./AUTH_SWAGGER_DOCUMENTATION.md) ⭐ NEW
+**AuthController Swagger 문서 작업 완료 보고서**
+
+- AuthController Swagger 어노테이션 추가 내역
+- DTO 클래스 Schema 어노테이션 작업
+- 문서화 수준 및 주요 개선 사항
+- 프론트엔드 개발자를 위한 Quick Start
+
+**완료된 API:**
+- POST /api/auth/signup - 회원가입
+- POST /api/auth/login - 로그인
+- POST /api/auth/refresh - Access Token 갱신
+- POST /api/auth/logout - 로그아웃
+- DELETE /api/auth/withdraw - 회원 탈퇴
+
+---
+
+### 5. [REPOSITORY_REFACTORING.md](./REPOSITORY_REFACTORING.md)
 **Repository 디렉토리 분리 작업 보고서**
 
 - Repository 파일을 별도 `repository/` 디렉토리로 분리
@@ -63,7 +97,7 @@ domain/user/
 
 ---
 
-### 4. [SCHEMA_CHANGES_SUMMARY.md](./SCHEMA_CHANGES_SUMMARY.md)
+### 6. [SCHEMA_CHANGES_SUMMARY.md](./SCHEMA_CHANGES_SUMMARY.md)
 **스키마 변경사항 요약**
 
 - TRAINING_JOBS 테이블 제거 (AI API로 책임 분리)
@@ -79,7 +113,7 @@ domain/user/
 
 ---
 
-### 5. [SCHEMA_COMPLETION_REPORT.md](./SCHEMA_COMPLETION_REPORT.md)
+### 7. [SCHEMA_COMPLETION_REPORT.md](./SCHEMA_COMPLETION_REPORT.md)
 **스키마 작업 완료 보고서**
 
 - 초기 스키마 설계 완료 보고
@@ -94,8 +128,14 @@ domain/user/
 
 ### 신규 개발자
 1. **DATABASE_SCHEMA.md** - 전체 구조 파악
-2. **AI_CLIENT_GUIDE.md** - AI 연동 방식 이해
-3. **REPOSITORY_REFACTORING.md** - 코드 구조 이해
+2. **SWAGGER_GUIDE.md** - API 사용 방법 이해 ⭐
+3. **AI_CLIENT_GUIDE.md** - AI 연동 방식 이해
+4. **REPOSITORY_REFACTORING.md** - 코드 구조 이해
+
+### 프론트엔드 개발자
+1. **SWAGGER_GUIDE.md** - API 엔드포인트 확인 ⭐
+2. **AUTH_SWAGGER_DOCUMENTATION.md** - 인증 API 상세 ⭐
+3. Swagger UI에서 직접 테스트
 
 ### 스키마 변경 이력 확인
 1. **SCHEMA_COMPLETION_REPORT.md** - 초기 설계

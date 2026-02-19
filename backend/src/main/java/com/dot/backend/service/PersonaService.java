@@ -67,6 +67,12 @@ public class PersonaService {
     ) {
         log.info("Creating persona for user: {}, name: {}, speakerName: {}", user.getEmail(), name, speakerName);
 
+        // 사용자의 실제 이름 가져오기 (복호화)
+        String userName = encryptionUtil.decrypt(user.getName());
+        if (userName == null || userName.isBlank()) {
+            userName = "사용자"; // 이름이 없는 경우 기본값
+        }
+
         // 전화번호 암호화 (있는 경우)
         String encryptedPhoneNumber = null;
         if (phoneNumber != null && !phoneNumber.isBlank()) {
@@ -109,10 +115,19 @@ public class PersonaService {
         // 카톡 파일 처리 (있는 경우)
         if (kakaoFile != null && !kakaoFile.isEmpty()) {
             try {
-                processKakaoFile(savedPersona, kakaoFile, speakerName);
+                // 1. 파일 파싱
+                List<ParsedMessage> messages = kakaoTxtParser.parse(kakaoFile);
+                log.info("Parsed {} messages from kakao file", messages.size());
+
+                // 2. Trait 생성 (Gemini 분석) - 복호화된 userName 전달
+                String generatedTrait = kakaoTxtParser.analyzeAndGenerateTrait(name, userName, relationship, memo, messages, speakerName);
+                savedPersona.updateTrait(generatedTrait);
+                log.info("Generated and saved trait for persona: {}", savedPersona.getId());
+
+                // 3. ConversationSample 저장
+                processKakaoFile(savedPersona, messages, speakerName);
             } catch (IOException e) {
                 log.error("Failed to process kakao file", e);
-                // 카톡 파일 처리 실패해도 Persona는 생성됨 (나중에 추가 가능)
             }
         }
 
@@ -122,25 +137,20 @@ public class PersonaService {
     }
 
     /**
-     * 카톡 파일 파싱 및 ConversationSample 저장
+     * 카톡 파일 파싱 데이터로 ConversationSample 저장
      */
-    private void processKakaoFile(Persona persona, MultipartFile kakaoFile, String speakerName) throws IOException {
-        log.info("Processing kakao file for persona: {}, speakerName: {}", persona.getId(), speakerName);
-
-        // 파일 파싱
-        List<ParsedMessage> messages = kakaoTxtParser.parse(kakaoFile);
-        log.info("Parsed {} messages from kakao file", messages.size());
+    private void processKakaoFile(Persona persona, List<ParsedMessage> messages, String speakerName) {
+        log.info("Processing kakao messages for persona: {}, speakerName: {}", persona.getId(), speakerName);
 
         // 화자 이름 검증
         boolean speakerFound = messages.stream()
                 .anyMatch(msg -> msg.getSpeaker().equals(speakerName));
 
         if (!speakerFound) {
-            throw new IllegalArgumentException(
-                    String.format("화자 '%s'를 찾을 수 없습니다. 파일에서 발견된 화자: %s",
-                            speakerName,
-                            messages.stream().map(ParsedMessage::getSpeaker).distinct().collect(Collectors.joining(", ")))
-            );
+            log.warn("Speaker '{}' not found in messages. Available speakers: {}", 
+                    speakerName, 
+                    messages.stream().map(ParsedMessage::getSpeaker).distinct().collect(Collectors.joining(", ")));
+            return;
         }
 
         // ConversationSample로 변환 및 저장
