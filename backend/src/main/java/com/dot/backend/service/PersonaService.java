@@ -112,7 +112,7 @@ public class PersonaService {
 
         Persona savedPersona = personaRepository.save(persona);
 
-        // 카톡 파일 처리 (있는 경우)
+        // 카톡 파일 처리
         if (kakaoFile != null && !kakaoFile.isEmpty()) {
             try {
                 // 1. 파일 파싱
@@ -129,6 +129,11 @@ public class PersonaService {
             } catch (IOException e) {
                 log.error("Failed to process kakao file", e);
             }
+        } else {
+            // 카톡 파일이 없는 경우: 기본 정보와 메모를 바탕으로 Trait 생성
+            log.info("No kakao file provided. Generating basic trait for persona: {}", savedPersona.getId());
+            String generatedTrait = kakaoTxtParser.analyzeAndGenerateTrait(name, userName, relationship, memo, List.of(), null);
+            savedPersona.updateTrait(generatedTrait);
         }
 
         log.info("Persona created with ID: {}", savedPersona.getId());

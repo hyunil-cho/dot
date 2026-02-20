@@ -78,9 +78,9 @@ public class ChatSessionService {
                 .orElseThrow(() -> new IllegalArgumentException("Persona를 찾을 수 없습니다"));
 
         // 2. 페르소나 준비 상태 확인 (trait 존재 여부)
-        if (!persona.isReadyForChat()) {
-            throw new IllegalStateException("페르소나 지침서(Trait)가 생성되지 않았습니다. 다시 등록하거나 잠시 후 시도해주세요.");
-        }
+//        if (!persona.isReadyForChat()) {
+//            throw new IllegalStateException("페르소나 지침서(Trait)가 생성되지 않았습니다. 다시 등록하거나 잠시 후 시도해주세요.");
+//        }
 
         // 3. 중복 세션 체크 (같은 유저 + 같은 페르소나로 ACTIVE 세션이 이미 있으면 막기)
         boolean alreadyExists = chatSessionRepository
